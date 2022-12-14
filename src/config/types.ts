@@ -1,0 +1,6 @@
+export interface CosmosNetworkConfig {
+  chainId: string;
+  rpcUrl: string;
+  lcdUrl: string;
+  mnemonic: string;
+}
