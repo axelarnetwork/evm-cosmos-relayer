@@ -1,4 +1,4 @@
-import { AxelarClient } from "../index";
+import { AxelarClient } from "..";
 
 describe("AxelarClient", () => {
   let client: AxelarClient;
@@ -10,6 +10,9 @@ describe("AxelarClient", () => {
   it("should be able to query balance from devnet", async () => {
     const address = "axelar199km5vjuu6edyjlwx62wvmr6uqeghyz4rwmyvk";
     const balance = await client.getBalance(address);
-    console.log(balance);
+    expect(balance).toEqual({
+      denom: "uvx",
+      amount: expect.anything(),
+    });
   });
 });
