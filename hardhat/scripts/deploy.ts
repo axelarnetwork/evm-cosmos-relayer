@@ -1,10 +1,10 @@
 import { ethers } from "hardhat";
-import { chain } from "../constant";
+import { evm } from "../constant";
 
 async function main() {
   const MultiSend = await ethers.getContractFactory("MultiSend");
   const multiSend = await MultiSend.deploy(
-    chain.gateway,
+    evm.gateway,
     ethers.constants.AddressZero
   );
   await multiSend.deployed();

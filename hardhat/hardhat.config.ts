@@ -2,7 +2,8 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-etherscan";
 // import "@nomicfoundation/hardhat-toolbox";
-import { chain } from "./constant";
+import { evm } from "./constant";
+import "./tasks/multiSend";
 
 const config: HardhatUserConfig = {
   solidity: "0.8.9",
@@ -11,8 +12,8 @@ const config: HardhatUserConfig = {
     ganache0: {
       chainId: 1337,
       gasMultiplier: 2,
-      url: chain.rpcUrl,
-      accounts: [chain.privateKey],
+      url: evm.rpcUrl,
+      accounts: [evm.privateKey],
     },
   },
 };
