@@ -1,14 +1,13 @@
 import {
-  ConfirmDepositRequest as EvmConfirmDepositRequest,
   ConfirmGatewayTxRequest as EvmConfirmGatewayTxRequest,
   protobufPackage as EvmProtobufPackage,
 } from "@axelar-network/axelarjs-types/axelar/evm/v1beta1/tx";
 import {
-  ConfirmDepositRequest as EvmConfirmDepositRequest,
-  ConfirmGatewayTxRequest as EvmConfirmGatewayTxRequest,
-  protobufPackage as EvmProtobufPackage,
-} from "@axelar-network/axelarjs-types/axelar/evm/v1beta1/tx";
+  ExecuteGeneralMessageWithTokenRequest,
+  protobufPackage as AxelarProtobufPackage,
+} from "@axelar-network/axelarjs-types/axelar/axelarnet/v1beta1/tx";
 import { toAccAddress } from "@cosmjs/stargate/build/queryclient/utils";
+import { fromHex } from "@cosmjs/encoding";
 import { utils } from "ethers";
 
 /**
@@ -30,6 +29,26 @@ export function getConfirmGatewayTxPayload(
         sender: toAccAddress(sender),
         chain,
         txId: utils.arrayify(txHash),
+      }),
+    },
+  ];
+}
+
+export function getExecuteGeneralMessageWithTokenPayload(
+  sender: string,
+  chain: string,
+  txHash: string,
+  logIndex: number,
+  payload: string
+) {
+  return [
+    {
+      typeUrl: `/${AxelarProtobufPackage}.ExecuteGeneralMessageWithTokenRequest`,
+      value: ExecuteGeneralMessageWithTokenRequest.fromPartial({
+        sender: toAccAddress(sender),
+        chain,
+        payload: fromHex(payload),
+        id: `${txHash}-${logIndex}`,
       }),
     },
   ];

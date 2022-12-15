@@ -12,6 +12,7 @@
   "author": "euro@axelar.network",
   "license": "ISC",
   "dependencies": {
+    "@axelar-network/axelar-gmp-sdk-solidity": "^2.0.0",
     "@axelar-network/axelarjs-sdk": "../axelar-sdk",
     "@cosmjs/stargate": "^0.29.5",
     "dotenv": "^16.0.3",
