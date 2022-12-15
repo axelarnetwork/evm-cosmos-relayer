@@ -36,7 +36,7 @@ export function getConfirmGatewayTxPayload(
 
 export function getExecuteGeneralMessageWithTokenPayload(
   sender: string,
-  chain: string,
+  destinationChain: string,
   txHash: string,
   logIndex: number,
   payload: string
@@ -46,7 +46,7 @@ export function getExecuteGeneralMessageWithTokenPayload(
       typeUrl: `/${AxelarProtobufPackage}.ExecuteGeneralMessageWithTokenRequest`,
       value: ExecuteGeneralMessageWithTokenRequest.fromPartial({
         sender: toAccAddress(sender),
-        chain,
+        chain: destinationChain,
         payload: fromHex(payload),
         id: `${txHash}-${logIndex}`,
       }),
