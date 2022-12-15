@@ -1,4 +1,3 @@
-
 // fetch the balance from given account
 // the following is a path from the evm chain to cosmos chain
 // confirm the transaction from evm
@@ -26,7 +25,7 @@ export class AxelarClient {
   public config: CosmosNetworkConfig;
   public sdk: AxelarSigningClient;
 
-  constructor(sdk: AxelarSigningClient, config?: CosmosNetworkConfig){
+  constructor(sdk: AxelarSigningClient, config?: CosmosNetworkConfig) {
     this.config = config || appConfig.devnet;
     this.sdk = sdk;
   }
@@ -40,12 +39,17 @@ export class AxelarClient {
         mnemonic: config.mnemonic,
       },
       options: {},
-    })
+    });
 
-    return new AxelarClient(sdk, config)
+    return new AxelarClient(sdk, config);
   }
 
-  public confirm = async(sender: string, burner: string, chain: string, txHash: string) => {
+  public confirm = async (
+    sender: string,
+    burner: string,
+    chain: string,
+    txHash: string
+  ) => {
     const payload: EncodeObject[] = [
       {
         typeUrl: `/${EvmProtobufPackage}.ConfirmGatewayTxRequest`,
@@ -67,10 +71,10 @@ export class AxelarClient {
       gas: "5000000",
     };
 
-    return this.sdk.signThenBroadcast(payload, fee)
-  }
+    return this.sdk.signThenBroadcast(payload, fee);
+  };
 
-  public getBalance = async(address: string) => {
-    return this.sdk.getBalance(address, "uvx")
-  }
+  public getBalance = async (address: string) => {
+    return this.sdk.getBalance(address, "uvx");
+  };
 }
