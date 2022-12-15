@@ -48,19 +48,16 @@ export class AxelarClient {
 
   public async executeGeneralMessageWithToken(
     sender: string,
-    srcChain: string,
     destChain: string,
+    logIndex: number,
     txHash: string,
     payload: string
   ) {
-    const provider = getProvider(srcChain);
-    const receipt = await provider?.getTransactionReceipt(txHash);
-    receipt?.logs?.forEach((log) => {
-    }
     const _payload = getExecuteGeneralMessageWithTokenPayload(
       sender,
-      chain,
+      destChain,
       txHash,
+      logIndex,
       payload
     );
     return this.sdk.signThenBroadcast(_payload, this.fee);
