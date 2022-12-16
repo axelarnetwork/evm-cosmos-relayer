@@ -1,2 +1,2 @@
-
-console.log("hello")
+export * from "./config";
+export * from "./clients";
