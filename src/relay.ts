@@ -18,9 +18,9 @@ const initServer = async () => {
 };
 
 async function main() {
+  const recipientAddress = "axelar199km5vjuu6edyjlwx62wvmr6uqeghyz4rwmyvk";
   const evm = config.evm["ganache-0"];
   const observedDestinationChains = [config.cosmos.demo.chainId];
-  const recipientAddress = "axelar199km5vjuu6edyjlwx62wvmr6uqeghyz4rwmyvk";
   const listener = new GMPListenerClient(evm.rpcUrl, evm.gateway);
 
   // Create an event subject for ContractCallWithTokenListenerEvent
@@ -65,8 +65,9 @@ async function main() {
     // Check recipient balance
     await sleep(3000);
     const client2 = await AxelarClient.init(config.cosmos.demo);
+    console.log(client2.sdk.signerAddress, recipientAddress);
     const balance = await client2.getBalance(
-      recipientAddress,
+      client2.sdk.signerAddress,
       "ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5"
     );
     console.log("Balance: ", balance);
