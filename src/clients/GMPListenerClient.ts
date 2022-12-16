@@ -10,6 +10,7 @@ import { filterEventArgs } from "../utils/filterUtils";
 
 export class GMPListenerClient {
   gatewayContract: IAxelarGatewayAbi;
+  private currentBlock = 0;
   private targetChains = ["demo-chain"];
 
   constructor(rpcUrl: string, gateway: string) {
@@ -31,8 +32,15 @@ export class GMPListenerClient {
       null,
       null
     );
+    // const events = await this.gatewayContract.queryFilter(filter, 0, "latest");
+    // events.forEach((event) => {
+    //   console.log(event.args.destinationChain);
+    // });
+
     this.gatewayContract.on(filter, (...args) => {
       const event = args[7];
+      if (event.blockNumber <= this.currentBlock) return;
+
       subject.next({
         hash: event.transactionHash,
         blockNumber: event.blockNumber,
@@ -42,9 +50,14 @@ export class GMPListenerClient {
     });
   }
 
-  public listenEVM(subject: Subject<ContractCallWithTokenListenerEvent>) {
+  public async listenEVM(subject: Subject<ContractCallWithTokenListenerEvent>) {
     // clear all listeners before subscribe a new one.
     this.gatewayContract.removeAllListeners();
+
+    // update block number
+    this.currentBlock = await this.gatewayContract.provider.getBlockNumber();
+    console.log("current block number: ", this.currentBlock);
+
     this.listenCallContractWithToken(subject);
   }
 }
