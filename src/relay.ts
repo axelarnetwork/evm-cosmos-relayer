@@ -11,6 +11,8 @@ const initServer = async () => {
     host: "localhost",
   });
 
+  // TODO: add the api routes here for a list of relayed txs and more info about relayer.
+
   await server.start();
   console.log("Server running on %s", server.info.uri);
 };
@@ -18,6 +20,7 @@ const initServer = async () => {
 async function main() {
   const evm = config.evm["ganache-0"];
   const observedDestinationChains = [config.cosmos.demo.chainId];
+  const recipientAddress = "axelar199km5vjuu6edyjlwx62wvmr6uqeghyz4rwmyvk";
   const listener = new GMPListenerClient(evm.rpcUrl, evm.gateway);
 
   // Create an event subject for ContractCallWithTokenListenerEvent
@@ -41,12 +44,16 @@ async function main() {
   // Subscribe to the observable to execute txs on Axelar for relaying to Cosmos
   const client = await AxelarClient.init();
   evmToCosmosObservable.subscribe(async (event) => {
-    // Confirm tx
+    // Sent a confirm tx to devnet-vx
     const confirmTx = await client.confirmEvmTx("ganache-0", event.hash);
     console.log("Confirm tx: ", confirmTx.transactionHash);
 
-    console.log("Wait for 20 seconds...");
-    await sleep(20000);
+    console.log("Wait for confirmation... (10s)");
+
+    // TODO: use a better way to wait for confirmation
+    await sleep(10000);
+
+    // Sent an execute tx to devnet-vx
     const executeTx = await client.executeGeneralMessageWithToken(
       event.args.destinationChain,
       event.logIndex,
@@ -59,8 +66,8 @@ async function main() {
     await sleep(3000);
     const client2 = await AxelarClient.init(config.cosmos.demo);
     const balance = await client2.getBalance(
-      client2.sdk.signerAddress,
-      "uusda"
+      recipientAddress,
+      "ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5"
     );
     console.log("Balance: ", balance);
   });

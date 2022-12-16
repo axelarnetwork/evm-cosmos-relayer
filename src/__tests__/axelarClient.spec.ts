@@ -12,7 +12,6 @@ describe("AxelarClient", () => {
       "ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5";
     const address = "axelar199km5vjuu6edyjlwx62wvmr6uqeghyz4rwmyvk";
     const balance = await client.getBalance(address, denom);
-    console.log(balance);
     expect(balance).toEqual({
       denom: denom,
       amount: expect.anything(),
