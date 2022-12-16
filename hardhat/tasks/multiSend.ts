@@ -16,7 +16,7 @@ task("multiSend", "Send GMP tx to cosmos").setAction(async (taskArgs, hre) => {
   const destAddress = "axelar16rdjmg0ddsy6tg2m945uyj8jnltk4tpw22quxg";
   const receivers = ["axelar199km5vjuu6edyjlwx62wvmr6uqeghyz4rwmyvk"];
   const symbol = "axlUSDA";
-  const amount = "1";
+  const amount = "10000";
 
   const usdaAddress = "0x392B0A115101CC66241bC4180B000EaCEB8e31e3";
   const erc20 = new ethers.Contract(
