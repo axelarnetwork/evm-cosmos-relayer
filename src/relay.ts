@@ -18,9 +18,9 @@ const initServer = async () => {
 };
 
 async function main() {
+  const recipientAddress = "axelar199km5vjuu6edyjlwx62wvmr6uqeghyz4rwmyvk";
   const evm = config.evm["ganache-0"];
   const observedDestinationChains = [config.cosmos.demo.chainId];
-  const recipientAddress = "axelar199km5vjuu6edyjlwx62wvmr6uqeghyz4rwmyvk";
   const listener = new GMPListenerClient(evm.rpcUrl, evm.gateway);
 
   // Create an event subject for ContractCallWithTokenListenerEvent
@@ -41,35 +41,36 @@ async function main() {
     console.log("Received event:", event);
   });
 
+  const vxClient = await AxelarClient.init(config.cosmos.devnet);
+  const demoClient = await AxelarClient.init(config.cosmos.demo);
+
   // Subscribe to the observable to execute txs on Axelar for relaying to Cosmos
-  const client = await AxelarClient.init();
   evmToCosmosObservable.subscribe(async (event) => {
     // Sent a confirm tx to devnet-vx
-    const confirmTx = await client.confirmEvmTx("ganache-0", event.hash);
-    console.log("Confirm tx: ", confirmTx.transactionHash);
-
-    console.log("Wait for confirmation... (10s)");
+    const confirmTx = await vxClient.confirmEvmTx("ganache-0", event.hash);
+    console.log("\nConfirmed:", confirmTx.transactionHash);
 
     // TODO: use a better way to wait for confirmation
+    console.log("Wait for confirmation... (10s)");
     await sleep(10000);
 
     // Sent an execute tx to devnet-vx
-    const executeTx = await client.executeGeneralMessageWithToken(
+    const executeTx = await vxClient.executeGeneralMessageWithToken(
       event.args.destinationChain,
       event.logIndex,
       event.hash,
       event.args.payload
     );
-    console.log("Execute tx:", executeTx.transactionHash);
+    console.log("\nExecuted:", executeTx.transactionHash);
 
     // Check recipient balance
-    await sleep(3000);
-    const client2 = await AxelarClient.init(config.cosmos.demo);
-    const balance = await client2.getBalance(
+    console.log("Wait for balance to be updated... (5s)");
+    await sleep(5000);
+    const balance = await demoClient.getBalance(
       recipientAddress,
       "ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5"
     );
-    console.log("Balance: ", balance);
+    console.log("Balance:", balance);
   });
 
   await initServer();
