@@ -41,6 +41,7 @@ export class AxelarClient {
   }
 
   public confirmEvmTx(chain: string, txHash: string) {
+    console.log("ConfirmEvmTx params:", chain, txHash);
     const payload = getConfirmGatewayTxPayload(
       this.sdk.signerAddress,
       chain,
@@ -55,6 +56,12 @@ export class AxelarClient {
     txHash: string,
     payload: string
   ) {
+    console.log(
+      "ExecuteGeneralMessageWithToken params:",
+      destChain,
+      txHash + "-" + logIndex,
+      payload
+    );
     const _payload = getExecuteGeneralMessageWithTokenPayload(
       this.sdk.signerAddress,
       destChain,
@@ -70,6 +77,8 @@ export class AxelarClient {
   }
 
   public async getBalance(address: string, denom?: string) {
+    // const balances = await this.sdk.getAllBalances(address);
+    // console.log(balances);
     return this.sdk.getBalance(address, denom || "uvx");
   }
 }
