@@ -56,7 +56,7 @@ export class GMPListenerClient {
 
     // update block number
     this.currentBlock = await this.gatewayContract.provider.getBlockNumber();
-    console.log("current block number: ", this.currentBlock);
+    console.log("Current block number:", this.currentBlock);
 
     this.listenCallContractWithToken(subject);
   }

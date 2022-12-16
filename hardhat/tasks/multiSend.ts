@@ -8,6 +8,7 @@ task("multisend", "Send GMP tx to cosmos")
     const { ethers } = hre;
     const [deployer] = await ethers.getSigners();
     const { recipient, amount } = taskArgs;
+    console.log(recipient, amount);
     const multisendAddress = "0x873424B4cf0E6AF4d8402ee05Ed7CC324307df47";
 
     const multiSend = await ethers.getContractAt(
