@@ -6,7 +6,6 @@ import {
   getConfirmGatewayTxPayload,
   getExecuteGeneralMessageWithTokenPayload,
 } from "../utils/payloadBuilder";
-import { getProvider } from "../utils/providerUtils";
 
 export class AxelarClient {
   public config: CosmosNetworkConfig;
@@ -23,7 +22,7 @@ export class AxelarClient {
           amount: "1000",
         },
       ],
-      gas: "5000000",
+      gas: "500000",
     };
   }
 
@@ -41,20 +40,23 @@ export class AxelarClient {
     return new AxelarClient(sdk, config);
   }
 
-  public confirmEvmTx(sender: string, chain: string, txHash: string) {
-    const payload = getConfirmGatewayTxPayload(sender, chain, txHash);
+  public confirmEvmTx(chain: string, txHash: string) {
+    const payload = getConfirmGatewayTxPayload(
+      this.sdk.signerAddress,
+      chain,
+      txHash
+    );
     return this.sdk.signThenBroadcast(payload, this.fee);
   }
 
   public async executeGeneralMessageWithToken(
-    sender: string,
     destChain: string,
     logIndex: number,
     txHash: string,
     payload: string
   ) {
     const _payload = getExecuteGeneralMessageWithTokenPayload(
-      sender,
+      this.sdk.signerAddress,
       destChain,
       txHash,
       logIndex,
@@ -67,7 +69,7 @@ export class AxelarClient {
     this.fee = fee;
   }
 
-  public async getBalance(address: string) {
-    return this.sdk.getBalance(address, "uvx");
+  public async getBalance(address: string, denom?: string) {
+    return this.sdk.getBalance(address, denom || "uvx");
   }
 }

@@ -47,7 +47,7 @@ export function getExecuteGeneralMessageWithTokenPayload(
       value: ExecuteGeneralMessageWithTokenRequest.fromPartial({
         sender: toAccAddress(sender),
         chain: destinationChain,
-        payload: fromHex(payload),
+        payload: utils.arrayify(payload),
         id: `${txHash}-${logIndex}`,
       }),
     },
