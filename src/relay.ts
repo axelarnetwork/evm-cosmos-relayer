@@ -3,6 +3,7 @@ import { config } from "./config";
 import hapi from "@hapi/hapi";
 import { Subject, filter } from "rxjs";
 import { ContractCallWithTokenListenerEvent } from "./types/filteredEvents";
+import { sleep } from "./utils/utils";
 
 const initServer = async () => {
   const server = hapi.server({
@@ -19,28 +20,33 @@ async function main() {
   const observedDestinationChains = [config.cosmos.demo.chainId];
   const listener = new GMPListenerClient(evm.rpcUrl, evm.gateway);
 
+  // Create an event subject for ContractCallWithTokenListenerEvent
   const subject = new Subject<ContractCallWithTokenListenerEvent>();
 
-  // Event publisher
+  // Pass the subject to the event listener, so that the listener can push events to the subject
   listener.listenEVM(subject);
 
-  // Event consumer, observe only events with destinationChain in observedDestinationChains
+  // Filter events by destination chain
   const evmToCosmosObservable = subject.pipe(
     filter((event) =>
       observedDestinationChains.includes(event.args.destinationChain)
     )
   );
 
-  // Logging
+  // Subscribe to the observable to log events
   evmToCosmosObservable.subscribe((event) => {
     console.log("Received event:", event);
   });
 
+  // Subscribe to the observable to execute txs on Axelar for relaying to Cosmos
   const client = await AxelarClient.init();
   evmToCosmosObservable.subscribe(async (event) => {
+    // Confirm tx
     const confirmTx = await client.confirmEvmTx("ganache-0", event.hash);
     console.log("Confirm tx: ", confirmTx.transactionHash);
 
+    console.log("Wait for 20 seconds...");
+    await sleep(20000);
     const executeTx = await client.executeGeneralMessageWithToken(
       event.args.destinationChain,
       event.logIndex,
@@ -50,10 +56,11 @@ async function main() {
     console.log("Execute tx:", executeTx.transactionHash);
 
     // Check recipient balance
+    await sleep(3000);
     const client2 = await AxelarClient.init(config.cosmos.demo);
     const balance = await client2.getBalance(
       client2.sdk.signerAddress,
-      "ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5"
+      "uusda"
     );
     console.log("Balance: ", balance);
   });
