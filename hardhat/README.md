@@ -1,13 +1,5 @@
-# Sample Hardhat Project
+# Run an example for GMP to Cosmos
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+1. `yarn install`
 
-Try running some of the following tasks:
-
-```shell
-npx hardhat help
-npx hardhat test
-GAS_REPORT=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.ts
-```
+2. `yarn task multisend <recipientAddress> <amount>`
