@@ -5,7 +5,7 @@ import {
   IAxelarGatewayAbi,
 } from "../types/contracts/index";
 export { ContractCallWithTokenEventObject } from "../types/contracts/IAxelarGatewayAbi";
-import { ContractCallWithTokenListenerEvent } from "../types/filteredEvents";
+import { ContractCallWithTokenListenerEvent } from "../types";
 import { filterEventArgs } from "../utils/filterUtils";
 
 export class GMPListenerClient {

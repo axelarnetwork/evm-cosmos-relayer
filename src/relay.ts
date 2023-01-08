@@ -2,10 +2,8 @@ import { GMPListenerClient, AxelarClient } from "./clients";
 import { config } from "./config";
 import hapi from "@hapi/hapi";
 import { Subject, filter } from "rxjs";
-import { ContractCallWithTokenListenerEvent } from "./types/filteredEvents";
+import { ContractCallWithTokenListenerEvent, IBCPacketEvent } from "./types";
 import { getPacketSequenceFromExecuteTx } from "./utils/parseUtils";
-import WebSocket from "isomorphic-ws";
-import ReconnectingWebSocket from 'reconnecting-websocket';
 import { PrismaClient } from '@prisma/client'
 
 const initServer = async () => {
@@ -75,46 +73,38 @@ async function main() {
     console.log("PacketSeq", packetSeq)
     const entry = await prisma.relay_data.create({
       data: {
-        seq: packetSeq,
+        packetsequence: packetSeq,
         txhash: `${event.hash}-${event.logIndex}`,
       }
     })
     console.log("Saved to db", entry);
   });
 
-  // Debugging Purpose: Logging balance update
-  const options = {
-    WebSocket, // custom WebSocket constructor
-    connectionTimeout: 1000,
-    maxRetries: 10,
-};
-  const client = new ReconnectingWebSocket(config.cosmos.devnet.ws, [], options);
-  client.addEventListener('open',  () => {
-    console.log('ws connected!')
-    const topic = `tm.event='Tx' AND acknowledge_packet.packet_dst_port='transfer'`
-    client.send(JSON.stringify({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'subscribe',
-      params: [topic]
-    }))
-    client.addEventListener('message', (ev: MessageEvent<any>) => {
-      // convert buffer to json
-      console.log(ev.data)
-      const event = JSON.parse(ev.data.toString())
 
-      // check if the event topic is matched
-      if(event.result.query !== topic) return;
+  // Listen for IBC packet events
+  const ibcSubject = new Subject<IBCPacketEvent>();
 
-      const packetSequence = parseInt(event.result.events['acknowledge_packet.packet_sequence'][0])
+  vxClient.listenForIBCComplete(ibcSubject);
 
-      console.log("Received balance update for seq:", packetSequence)
-      demoClient.getBalance(
-        recipientAddress,
-        "ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5"
-      ).then(balance => {
-        console.log("Balance:", balance);
-      })
+  ibcSubject.subscribe(async (event) => {
+    console.log(event)
+    await prisma.relay_data.update({
+      where: {
+        packetsequence: event.sequence,
+      },
+      data: {
+        amount: event.amount,
+        denom: event.denom,
+        updated_at: new Date(),
+        srcchannelid: event.srcChannel,
+        dstchannelid: event.destChannel,
+      }
+    })
+    demoClient.getBalance(
+      recipientAddress,
+      "ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5"
+    ).then(balance => {
+      console.log("Balance:", balance);
     })
   })
 
