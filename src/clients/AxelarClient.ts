@@ -176,7 +176,7 @@ export class AxelarClient {
       // parse the event data
       const sequence = parseInt(event.result.events['acknowledge_packet.packet_sequence'][0])
       const amount = event.result.events['fungible_token_packet.amount'][0]
-      const denom = event.result.events['acknowledge_packet.packet_sequence'][0]
+      const denom = event.result.events['fungible_token_packet.denom'][0]
       const destChannel = event.result.events['acknowledge_packet.packet_dst_channel'][0]
       const srcChannel = event.result.events['acknowledge_packet.packet_src_channel'][0]
       const hash = event.result.events['tx.hash'][0]
