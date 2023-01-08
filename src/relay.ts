@@ -3,7 +3,10 @@ import { config } from "./config";
 import hapi from "@hapi/hapi";
 import { Subject, filter } from "rxjs";
 import { ContractCallWithTokenListenerEvent } from "./types/filteredEvents";
-import { sleep } from "./utils/utils";
+import { getPacketSequenceFromExecuteTx } from "./utils/parseUtils";
+import WebSocket from "isomorphic-ws";
+import ReconnectingWebSocket from 'reconnecting-websocket';
+import { PrismaClient } from '@prisma/client'
 
 const initServer = async () => {
   const server = hapi.server({
@@ -43,16 +46,22 @@ async function main() {
 
   const vxClient = await AxelarClient.init(config.cosmos.devnet);
   const demoClient = await AxelarClient.init(config.cosmos.demo);
+  const prisma = new PrismaClient()
 
   // Subscribe to the observable to execute txs on Axelar for relaying to Cosmos
   evmToCosmosObservable.subscribe(async (event) => {
     // Sent a confirm tx to devnet-vx
-    const confirmTx = await vxClient.confirmEvmTx("ganache-0", event.hash);
+    const confirmTx = await vxClient.confirmEvmTx(
+      config.evm["ganache-0"].name,
+      event.hash
+    );
     console.log("\nConfirmed:", confirmTx.transactionHash);
 
-    // TODO: use a better way to wait for confirmation
-    console.log("Wait for confirmation... (10s)");
-    await sleep(10000);
+    console.log("Wait for confirmation... (5s)");
+    await vxClient.pollUntilContractCallWithTokenConfirmed(
+      config.evm["ganache-0"].name,
+      `${event.hash}-${event.logIndex}`
+    );
 
     // Sent an execute tx to devnet-vx
     const executeTx = await vxClient.executeGeneralMessageWithToken(
@@ -62,16 +71,52 @@ async function main() {
       event.args.payload
     );
     console.log("\nExecuted:", executeTx.transactionHash);
-
-    // Check recipient balance
-    console.log("Wait for balance to be updated... (5s)");
-    await sleep(5000);
-    const balance = await demoClient.getBalance(
-      recipientAddress,
-      "ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5"
-    );
-    console.log("Balance:", balance);
+    const packetSeq = getPacketSequenceFromExecuteTx(executeTx);
+    console.log("PacketSeq", packetSeq)
+    const entry = await prisma.relay_data.create({
+      data: {
+        seq: packetSeq,
+        txhash: `${event.hash}-${event.logIndex}`,
+      }
+    })
+    console.log("Saved to db", entry);
   });
+
+  // Debugging Purpose: Logging balance update
+  const options = {
+    WebSocket, // custom WebSocket constructor
+    connectionTimeout: 1000,
+    maxRetries: 10,
+};
+  const client = new ReconnectingWebSocket(config.cosmos.devnet.ws, [], options);
+  client.addEventListener('open',  () => {
+    console.log('ws connected!')
+    const topic = `tm.event='Tx' AND acknowledge_packet.packet_dst_port='transfer'`
+    client.send(JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'subscribe',
+      params: [topic]
+    }))
+    client.addEventListener('message', (ev: MessageEvent<any>) => {
+      // convert buffer to json
+      console.log(ev.data)
+      const event = JSON.parse(ev.data.toString())
+
+      // check if the event topic is matched
+      if(event.result.query !== topic) return;
+
+      const packetSequence = parseInt(event.result.events['acknowledge_packet.packet_sequence'][0])
+
+      console.log("Received balance update for seq:", packetSequence)
+      demoClient.getBalance(
+        recipientAddress,
+        "ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5"
+      ).then(balance => {
+        console.log("Balance:", balance);
+      })
+    })
+  })
 
   await initServer();
 }
