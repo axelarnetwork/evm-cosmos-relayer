@@ -87,8 +87,7 @@ async function main() {
   vxClient.listenForIBCComplete(ibcSubject);
 
   ibcSubject.subscribe(async (event) => {
-    console.log(event)
-    await prisma.relay_data.update({
+    const updatedData = await prisma.relay_data.update({
       where: {
         packetsequence: event.sequence,
       },
@@ -100,6 +99,7 @@ async function main() {
         dstchannelid: event.destChannel,
       }
     })
+    console.log("Updated db", updatedData);
     demoClient.getBalance(
       recipientAddress,
       "ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5"

@@ -1,6 +1,7 @@
 import { CosmosNetworkConfig } from "../config/types";
 import { config as appConfig } from "../config";
 import { AxelarSigningClient, Environment } from "@axelar-network/axelarjs-sdk";
+import { EncodeObject } from "@cosmjs/proto-signing";
 import { StdFee } from "@cosmjs/stargate";
 import {
   getConfirmGatewayTxPayload,
@@ -67,7 +68,7 @@ export class AxelarClient {
       chain,
       txHash
     );
-    return this.sdk.signThenBroadcast(payload, this.fee);
+    return this.broadcast(payload);
   }
 
   public async executeGeneralMessageWithToken(
@@ -83,7 +84,19 @@ export class AxelarClient {
       logIndex,
       payload
     );
-    return this.sdk.signThenBroadcast(_payload, this.fee);
+    return this.broadcast(_payload);
+  }
+
+  private broadcast<T extends EncodeObject[]>(payload: T): Promise<any> {
+    return this.sdk.signThenBroadcast(payload, this.fee).catch(async (e: any) => {
+      if(e.message.includes('account sequence mismatch')) {
+        console.log("Account sequence mismatch, retrying in 3 seconds...")
+        await sleep(3000);
+        return this.broadcast(payload);
+      }
+
+      throw e;
+    })
   }
 
   public setFee(fee: StdFee) {
