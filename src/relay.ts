@@ -167,6 +167,7 @@ async function main() {
       data: {
         amount: event.amount,
         denom: event.denom,
+        ibc_hash: event.hash,
         updated_at: new Date(),
         src_channel_id: event.srcChannel,
         dst_channel_id: event.destChannel,
