@@ -9,6 +9,7 @@ const demo: CosmosNetworkConfig = {
     "http://a1b287720a05545eb8e2f6c769a1af6b-1437958231.us-east-2.elb.amazonaws.com:26657",
   lcdUrl:
     "http://a1b287720a05545eb8e2f6c769a1af6b-1437958231.us-east-2.elb.amazonaws.com:1317",
+  ws: "ws://a1b287720a05545eb8e2f6c769a1af6b-1437958231.us-east-2.elb.amazonaws.com:26657/websocket"
 };
 
 const devnet: CosmosNetworkConfig = {
@@ -19,6 +20,7 @@ const devnet: CosmosNetworkConfig = {
     "http://a84bc226b379f4142928245039a11d4a-1282067752.us-east-2.elb.amazonaws.com:26657",
   lcdUrl:
     "http://a84bc226b379f4142928245039a11d4a-1282067752.us-east-2.elb.amazonaws.com:1317",
+  ws: "ws://a84bc226b379f4142928245039a11d4a-1282067752.us-east-2.elb.amazonaws.com:26657/websocket"
 };
 
 const ganache0 = {

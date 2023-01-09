@@ -2,6 +2,7 @@ import {
   ConfirmGatewayTxRequest as EvmConfirmGatewayTxRequest,
   protobufPackage as EvmProtobufPackage,
 } from "@axelar-network/axelarjs-types/axelar/evm/v1beta1/tx";
+// import {} from "@axelar-network/axelarjs-types/axelar/evm/v1beta1/event";
 import {
   ExecuteGeneralMessageWithTokenRequest,
   protobufPackage as AxelarProtobufPackage,

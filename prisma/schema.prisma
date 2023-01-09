@@ -1,0 +1,20 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model relay_data {
+  id              String    @id @db.VarChar(255)
+  packet_sequence Int       @unique
+  src_channel_id  String?   @db.VarChar(255)
+  dst_channel_id  String?   @db.VarChar(255)
+  amount          String?   @db.VarChar(255)
+  denom           String?   @db.VarChar(255)
+  ibc_hash        String?   @db.VarChar(255)
+  created_at      DateTime? @default(now()) @db.Timestamp(6)
+  updated_at      DateTime? @default(now()) @db.Timestamp(6)
+}

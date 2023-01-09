@@ -1,9 +1,11 @@
 import { GMPListenerClient, AxelarClient } from "./clients";
 import { config } from "./config";
-import hapi from "@hapi/hapi";
+import hapi, {Request} from "@hapi/hapi";
+import Joi from "joi";
 import { Subject, filter } from "rxjs";
-import { ContractCallWithTokenListenerEvent } from "./types/filteredEvents";
-import { sleep } from "./utils/utils";
+import { ContractCallWithTokenListenerEvent, IBCPacketEvent, PaginationParams } from "./types";
+import { getPacketSequenceFromExecuteTx } from "./utils/parseUtils";
+import { prisma } from './clients'
 
 const initServer = async () => {
   const server = hapi.server({
@@ -11,7 +13,80 @@ const initServer = async () => {
     host: "localhost",
   });
 
-  // TODO: add the api routes here for a list of relayed txs and more info about relayer.
+  server.route({
+    method: "GET",
+    path: "/relayTx",
+    handler: async (request) => {
+      const { txHash, logIndex } = request.query;
+      const data = await prisma.relay_data.findFirst({
+        where: {
+          id: `${txHash}-${logIndex}`
+        }
+      })
+
+      if(!data) {
+        return {
+          success: false,
+          data: null,
+          error: "No data found"
+        }
+      }
+
+      return {
+        success: true,
+        payload: data
+      }
+    }
+  });
+
+  // get all relay data in pagination
+  server.route({
+    method: "POST",
+    path: "/relayTx.all",
+    options: {
+      auth: false,
+      validate: {
+        payload: Joi.object({
+          page: Joi.number().integer().min(0).default(0),
+          limit: Joi.number().integer().min(1).max(100).default(10),
+          orderBy: Joi.object().keys({
+            created_at: Joi.string().valid('asc', 'desc').default('desc'),
+            updated_at: Joi.string().valid('asc', 'desc').default('desc'),
+          }),
+          completed: Joi.boolean().default(true),
+        }).options({ stripUnknown: true })
+      }
+    },
+    handler: async (request: Request) => {
+      const payload = request.payload as PaginationParams;
+      const { page, limit, orderBy, completed } = payload;
+
+      const filtering = completed ? {
+        dst_channel_id: {
+          not: null
+        }
+      } : {
+        dst_channel_id: {
+          equals: null
+        }
+      }
+
+      const data = await prisma.relay_data.findMany({
+        skip: page * limit,
+        take: limit,
+        orderBy,
+        where: filtering
+      })
+
+      return {
+        success: true,
+        payload: {
+          data,
+          page,
+          total: data.length,
+        }
+      }
+    }});
 
   await server.start();
   console.log("Server running on %s", server.info.uri);
@@ -47,12 +122,17 @@ async function main() {
   // Subscribe to the observable to execute txs on Axelar for relaying to Cosmos
   evmToCosmosObservable.subscribe(async (event) => {
     // Sent a confirm tx to devnet-vx
-    const confirmTx = await vxClient.confirmEvmTx("ganache-0", event.hash);
+    const confirmTx = await vxClient.confirmEvmTx(
+      config.evm["ganache-0"].name,
+      event.hash
+    );
     console.log("\nConfirmed:", confirmTx.transactionHash);
 
-    // TODO: use a better way to wait for confirmation
-    console.log("Wait for confirmation... (10s)");
-    await sleep(10000);
+    console.log("Wait for confirmation... (5s)");
+    await vxClient.pollUntilContractCallWithTokenConfirmed(
+      config.evm["ganache-0"].name,
+      `${event.hash}-${event.logIndex}`
+    );
 
     // Sent an execute tx to devnet-vx
     const executeTx = await vxClient.executeGeneralMessageWithToken(
@@ -62,16 +142,44 @@ async function main() {
       event.args.payload
     );
     console.log("\nExecuted:", executeTx.transactionHash);
+    const packetSeq = getPacketSequenceFromExecuteTx(executeTx);
+    console.log("PacketSeq", packetSeq)
+    const entry = await prisma.relay_data.create({
+      data: {
+        id: `${event.hash}-${event.logIndex}`,
+        packet_sequence: packetSeq,
+      }
+    })
+    console.log("Saved to db", entry);
+  });
 
-    // Check recipient balance
-    console.log("Wait for balance to be updated... (5s)");
-    await sleep(5000);
-    const balance = await demoClient.getBalance(
+
+  // Listen for IBC packet events
+  const ibcSubject = new Subject<IBCPacketEvent>();
+
+  vxClient.listenForIBCComplete(ibcSubject);
+
+  ibcSubject.subscribe(async (event) => {
+    const updatedData = await prisma.relay_data.update({
+      where: {
+        packet_sequence: event.sequence,
+      },
+      data: {
+        amount: event.amount,
+        denom: event.denom,
+        updated_at: new Date(),
+        src_channel_id: event.srcChannel,
+        dst_channel_id: event.destChannel,
+      }
+    })
+    console.log("Updated db", updatedData);
+    demoClient.getBalance(
       recipientAddress,
       "ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5"
-    );
-    console.log("Balance:", balance);
-  });
+    ).then(balance => {
+      console.log("Balance:", balance);
+    })
+  })
 
   await initServer();
 }
