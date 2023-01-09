@@ -63,8 +63,6 @@ const initServer = async () => {
       const payload = request.payload as PaginationParams;
       const { page, limit, orderBy, completed } = payload;
 
-      console.log(orderBy);
-
       const filtering = completed ? {
         dst_channel_id: {
           not: null
