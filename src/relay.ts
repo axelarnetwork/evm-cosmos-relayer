@@ -7,7 +7,6 @@ import { ContractCallWithTokenListenerEvent, IBCPacketEvent, PaginationParams } 
 import { getPacketSequenceFromExecuteTx } from "./utils/parseUtils";
 import { prisma } from './clients'
 
-
 const initServer = async () => {
   const server = hapi.server({
     port: 3000,
@@ -21,7 +20,7 @@ const initServer = async () => {
       const { txHash, logIndex } = request.query;
       const data = await prisma.relay_data.findFirst({
         where: {
-          txhash: `${txHash}-${logIndex}`
+          id: `${txHash}-${logIndex}`
         }
       })
 
@@ -63,11 +62,11 @@ const initServer = async () => {
       const { page, limit, orderBy, completed } = payload;
 
       const filtering = completed ? {
-        dstchannelid: {
+        dst_channel_id: {
           not: null
         }
       } : {
-        dstchannelid: {
+        dst_channel_id: {
           equals: null
         }
       }
@@ -147,8 +146,8 @@ async function main() {
     console.log("PacketSeq", packetSeq)
     const entry = await prisma.relay_data.create({
       data: {
-        packetsequence: packetSeq,
-        txhash: `${event.hash}-${event.logIndex}`,
+        id: `${event.hash}-${event.logIndex}`,
+        packet_sequence: packetSeq,
       }
     })
     console.log("Saved to db", entry);
@@ -163,14 +162,14 @@ async function main() {
   ibcSubject.subscribe(async (event) => {
     const updatedData = await prisma.relay_data.update({
       where: {
-        packetsequence: event.sequence,
+        packet_sequence: event.sequence,
       },
       data: {
         amount: event.amount,
         denom: event.denom,
         updated_at: new Date(),
-        srcchannelid: event.srcChannel,
-        dstchannelid: event.destChannel,
+        src_channel_id: event.srcChannel,
+        dst_channel_id: event.destChannel,
       }
     })
     console.log("Updated db", updatedData);
