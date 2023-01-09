@@ -1,10 +1,12 @@
 import { GMPListenerClient, AxelarClient } from "./clients";
 import { config } from "./config";
-import hapi from "@hapi/hapi";
+import hapi, {Request} from "@hapi/hapi";
+import Joi from "joi";
 import { Subject, filter } from "rxjs";
-import { ContractCallWithTokenListenerEvent, IBCPacketEvent } from "./types";
+import { ContractCallWithTokenListenerEvent, IBCPacketEvent, PaginationParams } from "./types";
 import { getPacketSequenceFromExecuteTx } from "./utils/parseUtils";
-import { PrismaClient } from '@prisma/client'
+import { prisma } from './clients'
+
 
 const initServer = async () => {
   const server = hapi.server({
@@ -12,7 +14,80 @@ const initServer = async () => {
     host: "localhost",
   });
 
-  // TODO: add the api routes here for a list of relayed txs and more info about relayer.
+  server.route({
+    method: "GET",
+    path: "/relayTx",
+    handler: async (request) => {
+      const { txHash, logIndex } = request.query;
+      const data = await prisma.relay_data.findFirst({
+        where: {
+          txhash: `${txHash}-${logIndex}`
+        }
+      })
+
+      if(!data) {
+        return {
+          success: false,
+          data: null,
+          error: "No data found"
+        }
+      }
+
+      return {
+        success: true,
+        payload: data
+      }
+    }
+  });
+
+  // get all relay data in pagination
+  server.route({
+    method: "POST",
+    path: "/relayTx.all",
+    options: {
+      auth: false,
+      validate: {
+        payload: Joi.object({
+          page: Joi.number().integer().min(0).default(0),
+          limit: Joi.number().integer().min(1).max(100).default(10),
+          orderBy: Joi.object().keys({
+            created_at: Joi.string().valid('asc', 'desc').default('desc'),
+            updated_at: Joi.string().valid('asc', 'desc').default('desc'),
+          }),
+          completed: Joi.boolean().default(true),
+        }).options({ stripUnknown: true })
+      }
+    },
+    handler: async (request: Request) => {
+      const payload = request.payload as PaginationParams;
+      const { page, limit, orderBy, completed } = payload;
+
+      const filtering = completed ? {
+        dstchannelid: {
+          not: null
+        }
+      } : {
+        dstchannelid: {
+          equals: null
+        }
+      }
+
+      const data = await prisma.relay_data.findMany({
+        skip: page * limit,
+        take: limit,
+        orderBy,
+        where: filtering
+      })
+
+      return {
+        success: true,
+        payload: {
+          data,
+          page,
+          total: data.length,
+        }
+      }
+    }});
 
   await server.start();
   console.log("Server running on %s", server.info.uri);
@@ -44,7 +119,6 @@ async function main() {
 
   const vxClient = await AxelarClient.init(config.cosmos.devnet);
   const demoClient = await AxelarClient.init(config.cosmos.demo);
-  const prisma = new PrismaClient()
 
   // Subscribe to the observable to execute txs on Axelar for relaying to Cosmos
   evmToCosmosObservable.subscribe(async (event) => {

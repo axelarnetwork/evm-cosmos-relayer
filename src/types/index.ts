@@ -15,3 +15,13 @@ export interface IBCPacketEvent {
   amount: string;
   sequence: number;
 }
+
+export interface PaginationParams {
+  page: number;
+  limit: number;
+  orderBy: {
+    created_at: 'asc' | 'desc';
+    updated_at: 'asc' | 'desc';
+  },
+  completed: boolean;
+}

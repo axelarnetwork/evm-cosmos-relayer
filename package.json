@@ -22,6 +22,7 @@
     "dotenv": "^16.0.3",
     "ethers": "^5.7.2",
     "isomorphic-ws": "^5.0.0",
+    "joi": "^17.7.0",
     "reconnecting-websocket": "^4.4.0",
     "rxjs": "^7.8.0",
     "utf-8-validate": "^6.0.0",
@@ -30,6 +31,8 @@
   "devDependencies": {
     "@jest/globals": "^29.3.1",
     "@typechain/ethers-v5": "^10.2.0",
+    "@types/hapi__hapi": "^21.0.0",
+    "@types/hapi__joi": "^17.1.9",
     "@types/jest": "^29.2.4",
     "@typescript-eslint/eslint-plugin": "^5.46.1",
     "@typescript-eslint/parser": "^5.46.1",
