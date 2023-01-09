@@ -99,6 +99,8 @@ async function main() {
   const evm = config.evm["ganache-0"];
   const observedDestinationChains = [config.cosmos.demo.chainId];
   const listener = new GMPListenerClient(evm.rpcUrl, evm.gateway);
+  const vxClient = await AxelarClient.init(config.cosmos.devnet);
+  const demoClient = await AxelarClient.init(config.cosmos.demo);
 
   // Create an event subject for ContractCallWithTokenListenerEvent
   const subject = new Subject<ContractCallWithTokenListenerEvent>();
@@ -113,16 +115,10 @@ async function main() {
     )
   );
 
-  // Subscribe to the observable to log events
-  evmToCosmosObservable.subscribe((event) => {
-    console.log("Received event:", event);
-  });
-
-  const vxClient = await AxelarClient.init(config.cosmos.devnet);
-  const demoClient = await AxelarClient.init(config.cosmos.demo);
-
   // Subscribe to the observable to execute txs on Axelar for relaying to Cosmos
   evmToCosmosObservable.subscribe(async (event) => {
+    console.log("Received event:", event);
+
     // Sent a confirm tx to devnet-vx
     const confirmTx = await vxClient.confirmEvmTx(
       config.evm["ganache-0"].name,
@@ -152,7 +148,6 @@ async function main() {
       }
     })
   });
-
 
   // Listen for IBC packet events
   const ibcSubject = new Subject<IBCPacketEvent>();
@@ -187,4 +182,5 @@ async function main() {
   await initServer();
 }
 
+console.log("Starting relayer server...")
 main();

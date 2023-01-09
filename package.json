@@ -4,9 +4,10 @@
   "description": "",
   "main": "src/index.ts",
   "scripts": {
-    "build": "rm -rf dist && tsc",
     "lint": "eslint .",
-    "start": "ts-node src/relay.ts",
+    "build": "rm -rf dist && tsc",
+    "start:dev": "ts-node src/relay.ts",
+    "start:prod": "node dist/relay.js",
     "test": "jest",
     "postinstall": "typechain --target ethers-v5 --out-dir src/types/contracts/ src/abi/*.json"
   },
@@ -31,7 +32,6 @@
   "devDependencies": {
     "@jest/globals": "^29.3.1",
     "@typechain/ethers-v5": "^10.2.0",
-    "@types/hapi__hapi": "^21.0.0",
     "@types/hapi__joi": "^17.1.9",
     "@types/jest": "^29.2.4",
     "@typescript-eslint/eslint-plugin": "^5.46.1",

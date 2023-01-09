@@ -1028,7 +1028,7 @@
   resolved "https://registry.yarnpkg.com/@hapi/file/-/file-3.0.0.tgz#f1fd824493ac89a6fceaf89c824afc5ae2121c09"
   integrity sha512-w+lKW+yRrLhJu620jT3y+5g2mHqnKfepreykvdOcl9/6up8GrQQn+l3FRTsjHTKbkbfQFkuksHpdv2EcpKcJ4Q==
 
-"@hapi/hapi@*", "@hapi/hapi@^21.1.0":
+"@hapi/hapi@^21.1.0":
   version "21.1.0"
   resolved "https://registry.yarnpkg.com/@hapi/hapi/-/hapi-21.1.0.tgz#0936480a92a4c57f4f49004ac857fe41dcd7fadb"
   integrity sha512-het7j9yLXZMVU1IvtN2JXkPkn/UcU1j8gsZxMS0Mu1q7791IQeyhT37tpRPUhqerOtL6L0E8Z8CvVVFOYxoN6w==
@@ -1703,13 +1703,6 @@
   integrity sha512-anKkLmZZ+xm4p8JWBf4hElkM4XR+EZeA2M9BAkkTldmcyDY4mbdIJnRghDJH3Ov5ooY7/UAoENtmdMSkaAd7Cw==
   dependencies:
     "@types/node" "*"
-
-"@types/hapi__hapi@^21.0.0":
-  version "21.0.0"
-  resolved "https://registry.yarnpkg.com/@types/hapi__hapi/-/hapi__hapi-21.0.0.tgz#4bf30e6a08a3adc164c9a301a7af3914d1060d35"
-  integrity sha512-urNzL9HQgOp4QbeEOG/Y/XIcU1pB6skGh7LKMd0hGkxb8oRmWe083x5LAuLjZNtuhRU6yKhiSjjqQEJ+3pWjpQ==
-  dependencies:
-    "@hapi/hapi" "*"
 
 "@types/hapi__joi@^17.1.9":
   version "17.1.9"
