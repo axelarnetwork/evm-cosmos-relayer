@@ -128,9 +128,7 @@ async function main() {
       config.evm["ganache-0"].name,
       event.hash
     );
-    console.log("\nConfirmed:", confirmTx.transactionHash);
-
-    console.log("Wait for confirmation... (5s)");
+    console.log("Confirmed:", confirmTx.transactionHash);
     await vxClient.pollUntilContractCallWithTokenConfirmed(
       config.evm["ganache-0"].name,
       `${event.hash}-${event.logIndex}`
@@ -143,16 +141,16 @@ async function main() {
       event.hash,
       event.args.payload
     );
-    console.log("\nExecuted:", executeTx.transactionHash);
+    console.log("Executed:", executeTx.transactionHash);
     const packetSeq = getPacketSequenceFromExecuteTx(executeTx);
-    console.log("PacketSeq", packetSeq)
-    const entry = await prisma.relay_data.create({
+
+    // save data to db.
+    await prisma.relay_data.create({
       data: {
         id: `${event.hash}-${event.logIndex}`,
         packet_sequence: packetSeq,
       }
     })
-    console.log("Saved to db", entry);
   });
 
 
@@ -162,7 +160,7 @@ async function main() {
   vxClient.listenForIBCComplete(ibcSubject);
 
   ibcSubject.subscribe(async (event) => {
-    const updatedData = await prisma.relay_data.update({
+    await prisma.relay_data.update({
       where: {
         packet_sequence: event.sequence,
       },
@@ -175,13 +173,15 @@ async function main() {
         dst_channel_id: event.destChannel,
       }
     })
-    console.log("Updated db", updatedData);
-    demoClient.getBalance(
-      recipientAddress,
-      "ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5"
-    ).then(balance => {
-      console.log("Balance:", balance);
-    })
+
+    if(process.env.DEV) {
+      demoClient.getBalance(
+        recipientAddress,
+        "ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5"
+      ).then(balance => {
+        console.log("Balance:", balance);
+      })
+    }
   })
 
   await initServer();
