@@ -52,6 +52,8 @@ const initServer = async () => {
           orderBy: Joi.object().keys({
             created_at: Joi.string().valid('asc', 'desc').default('desc'),
             updated_at: Joi.string().valid('asc', 'desc').default('desc'),
+          }).default({
+            updated_at: 'desc'
           }),
           completed: Joi.boolean().default(true),
         }).options({ stripUnknown: true })
@@ -60,6 +62,8 @@ const initServer = async () => {
     handler: async (request: Request) => {
       const payload = request.payload as PaginationParams;
       const { page, limit, orderBy, completed } = payload;
+
+      console.log(orderBy);
 
       const filtering = completed ? {
         dst_channel_id: {
@@ -167,6 +171,7 @@ async function main() {
       data: {
         amount: event.amount,
         denom: event.denom,
+        ibc_hash: event.hash,
         updated_at: new Date(),
         src_channel_id: event.srcChannel,
         dst_channel_id: event.destChannel,
