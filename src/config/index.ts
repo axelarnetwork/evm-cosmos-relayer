@@ -4,7 +4,7 @@ import { CosmosNetworkConfig } from "./types";
 const demo: CosmosNetworkConfig = {
   mnemonic: process.env.MNEMONIC || "",
   chainId: "demo-chain",
-  denom: "uvx",
+  denom: "udemo",
   rpcUrl:
     "http://a1b287720a05545eb8e2f6c769a1af6b-1437958231.us-east-2.elb.amazonaws.com:26657",
   lcdUrl:

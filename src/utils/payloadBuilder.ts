@@ -2,8 +2,11 @@ import {
   ConfirmGatewayTxRequest as EvmConfirmGatewayTxRequest,
   protobufPackage as EvmProtobufPackage,
 } from "@axelar-network/axelarjs-types/axelar/evm/v1beta1/tx";
+import {
+  MsgTransfer,
+  protobufPackage
+} from '@axelar-network/axelarjs-types/ibc/applications/transfer/v1/tx'
 // import {} from "@axelar-network/axelarjs-types/axelar/evm/v1beta1/event";
-import { MsgTransfer } from "cosmjs-types/ibc/applications/transfer/v1/tx";
 import { Height } from "cosmjs-types/ibc/core/client/v1/client";
 import {
   ExecuteGeneralMessageWithTokenRequest,
@@ -12,7 +15,7 @@ import {
 import { toAccAddress } from "@cosmjs/stargate/build/queryclient/utils";
 import { fromHex } from "@cosmjs/encoding";
 import { utils } from "ethers";
-import { Coin, SigningStargateClient } from "@cosmjs/stargate";
+import { Coin } from "@cosmjs/stargate";
 import Long from "long";
 
 /**
@@ -61,10 +64,11 @@ export function getExecuteGeneralMessageWithTokenPayload(
 
 export function getMsgIBCTransfer(
   senderAddress: string,
-  recipientAddress: string,
   sourceChannel: string,
-  amount: string
+  amount: string,
+  memo: string
 ) {
+  const axelarModuleAccount = "axelar19xj4ncc6h6y5ahpfqtspdx75y3dkrxj3zpah9k"
     const sourcePort = "transfer";
     const timeoutHeight: Height = {
       revisionHeight: Long.fromNumber(100),
@@ -72,19 +76,20 @@ export function getMsgIBCTransfer(
     };
     const sendToken: Coin = {
       amount,
-      denom: 'uusda'
+      denom: 'ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5'
     };
-  return {
-    typeUrl: "/ibc.applications.transfer.v1.MsgTransfer",
+  return [{
+    typeUrl: `/${protobufPackage}.MsgTransfer`,
     value: MsgTransfer.fromPartial({
-      sourcePort: sourcePort,
-      sourceChannel: sourceChannel,
+      sourcePort,
+      sourceChannel,
       sender: senderAddress,
-      receiver: recipientAddress,
+      receiver: axelarModuleAccount,
       token: sendToken,
-      timeoutHeight
+      timeoutHeight,
+      memo
     })
-  };
+  }];
 }
 
 // function get(
