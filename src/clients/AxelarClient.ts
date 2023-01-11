@@ -1,74 +1,39 @@
 import { CosmosNetworkConfig } from "../config/types";
-import { config as appConfig } from "../config";
-import { AxelarSigningClient, Environment } from "@axelar-network/axelarjs-sdk";
-import { EncodeObject } from "@cosmjs/proto-signing";
 import { StdFee } from "@cosmjs/stargate";
 import {
   getConfirmGatewayTxPayload,
   getExecuteGeneralMessageWithTokenPayload,
 } from "../utils/payloadBuilder";
-import {
-  AxelarQueryClient,
-  AxelarQueryClientType,
-} from "@axelar-network/axelarjs-sdk/dist/src/libs/AxelarQueryClient";
 import { sleep } from "../utils/utils";
 import { sha256 } from "ethers/lib/utils";
 import ReconnectingWebSocket from "reconnecting-websocket";
 import { Subject } from "rxjs";
 import { IBCPacketEvent } from "../types";
 import WebSocket from 'isomorphic-ws';
+import { SigningClient } from ".";
 
 export class AxelarClient {
-  public config: CosmosNetworkConfig;
-  public sdk: AxelarSigningClient;
-  public queryClient: AxelarQueryClientType;
-  public fee: StdFee;
+  public signingClient: SigningClient;
   public ws: ReconnectingWebSocket | undefined;
 
   constructor(
-    sdk: AxelarSigningClient,
-    client: AxelarQueryClientType,
-    config?: CosmosNetworkConfig
+    _signingClient: SigningClient,
   ) {
-    this.config = config || appConfig.cosmos.devnet;
-    this.sdk = sdk;
-    this.queryClient = client;
-    this.fee = {
-      amount: [
-        {
-          denom: this.config.denom,
-          amount: "1000",
-        },
-      ],
-      gas: "500000",
-    };
+    this.signingClient = _signingClient
   }
 
   static async init(_config?: CosmosNetworkConfig) {
-    const config = _config || appConfig.cosmos.devnet;
-    const _queryClient = await AxelarQueryClient.initOrGetAxelarQueryClient({
-      environment: Environment.DEVNET,
-      axelarRpcUrl: config.rpcUrl,
-    });
-    const sdk = await AxelarSigningClient.initOrGetAxelarSigningClient({
-      environment: Environment.DEVNET,
-      axelarRpcUrl: config.rpcUrl,
-      cosmosBasedWalletDetails: {
-        mnemonic: config.mnemonic,
-      },
-      options: {},
-    });
-
-    return new AxelarClient(sdk, _queryClient, config);
+    const signingClient = await SigningClient.init(_config);
+    return new AxelarClient(signingClient);
   }
 
   public confirmEvmTx(chain: string, txHash: string) {
     const payload = getConfirmGatewayTxPayload(
-      this.sdk.signerAddress,
+      this.signingClient.getAddress(),
       chain,
       txHash
     );
-    return this.broadcast(payload);
+    return this.signingClient.broadcast(payload);
   }
 
   public async executeGeneralMessageWithToken(
@@ -78,34 +43,21 @@ export class AxelarClient {
     payload: string
   ) {
     const _payload = getExecuteGeneralMessageWithTokenPayload(
-      this.sdk.signerAddress,
+      this.signingClient.getAddress(),
       destChain,
       txHash,
       logIndex,
       payload
     );
-    return this.broadcast(_payload);
-  }
-
-  private broadcast<T extends EncodeObject[]>(payload: T): Promise<any> {
-    return this.sdk.signThenBroadcast(payload, this.fee).catch(async (e: any) => {
-      if(e.message.includes('account sequence mismatch')) {
-        console.log("Account sequence mismatch, retrying in 3 seconds...")
-        await sleep(3000);
-        return this.broadcast(payload);
-      }
-
-      throw e;
-    })
+    return this.signingClient.broadcast(_payload);
   }
 
   public setFee(fee: StdFee) {
-    this.fee = fee;
+    this.signingClient.fee = fee
   }
 
   private getEvent(chain: string, eventId: string) {
-    this.queryClient
-    return this.queryClient.evm.Event({
+    return this.signingClient.queryClient.evm.Event({
       chain,
       eventId,
     });
@@ -156,7 +108,7 @@ export class AxelarClient {
       return this.ws.reconnect();
     }
 
-    this.ws = new ReconnectingWebSocket(this.config.ws, [], options);
+    this.ws = new ReconnectingWebSocket(this.signingClient.config.ws, [], options);
 
     const topic = `tm.event='Tx' AND acknowledge_packet.packet_dst_port='transfer'`
 
@@ -198,6 +150,6 @@ export class AxelarClient {
   }
 
   public async getBalance(address: string, denom?: string) {
-    return this.sdk.getBalance(address, denom || "uvx");
+    return this.signingClient.getBalance(address, denom)
   }
 }
