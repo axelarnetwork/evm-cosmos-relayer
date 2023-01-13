@@ -20,5 +20,5 @@ async function evmApprove() {
   // const tx2 = await evmClient.callContractWithToken()
 }
 
-// main()
-evmApprove()
+main()
+// evmApprove()
