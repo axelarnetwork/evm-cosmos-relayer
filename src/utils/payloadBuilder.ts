@@ -66,7 +66,7 @@ export function getMsgIBCTransfer(
   senderAddress: string,
   sourceChannel: string,
   amount: string,
-  memo: string
+  memo: Uint8Array
 ) {
     const axelarModuleAccount = "axelar19xj4ncc6h6y5ahpfqtspdx75y3dkrxj3zpah9k"
     const sourcePort = "transfer";
@@ -88,7 +88,7 @@ export function getMsgIBCTransfer(
       receiver: axelarModuleAccount,
       token: sendToken,
       timeoutHeight,
-      memo
+      memo: Buffer.from(memo).toString('hex')
     })
   }];
 }

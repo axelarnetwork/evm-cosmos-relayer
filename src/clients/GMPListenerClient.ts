@@ -1,21 +1,21 @@
 import { ethers } from "ethers";
 import { Subject } from "rxjs";
 import {
-  IAxelarGatewayAbi__factory,
-  IAxelarGatewayAbi,
+  IAxelarGateway__factory,
+  IAxelarGateway,
 } from "../types/contracts/index";
-export { ContractCallWithTokenEventObject } from "../types/contracts/IAxelarGatewayAbi";
+export { ContractCallWithTokenEventObject } from "../types/contracts/IAxelarGateway";
 import { ContractCallWithTokenListenerEvent } from "../types";
 import { filterEventArgs } from "../utils/filterUtils";
 
 export class GMPListenerClient {
-  gatewayContract: IAxelarGatewayAbi;
+  gatewayContract: IAxelarGateway;
   private currentBlock = 0;
   private targetChains = ["demo-chain"];
 
   constructor(rpcUrl: string, gateway: string) {
     const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
-    this.gatewayContract = IAxelarGatewayAbi__factory.connect(
+    this.gatewayContract = IAxelarGateway__factory.connect(
       gateway,
       provider
     );

@@ -1,5 +1,6 @@
 import { SigningClient } from ".";
 import { getMsgIBCTransfer } from "../utils/payloadBuilder";
+import {Metadata, Metadata_Type} from '@axelar-network/axelarjs-types/axelar/axelarnet/v1beta1/gmp'
 import {ethers} from 'ethers'
 
 export class IbcClient {
@@ -13,20 +14,18 @@ export class IbcClient {
     // create gmp metadata
     const encodedAddresses = ethers.utils.defaultAbiCoder.encode(["address[]"], [recipients]);
     // create ibc payload
-    const metadata = {
+    const _payload = Uint8Array.from(Buffer.from(encodedAddresses.slice(2), "hex"));
+
+    const metadata = Metadata.fromPartial({
       sender: sender,
-      source_chain: "demo-chain",
-      dest_chain: destChain,
-      dest_address: destAddress,
-      payload: encodedAddresses,
-      type: "GeneralMsgWithToken",
-    }
-    console.log("metadata", metadata)
+      sourceChain: "demo-chain",
+      destChain: destChain,
+      destAddress: destAddress,
+      payload: _payload,
+      type: Metadata_Type.TYPE_GENERAL_MESSAGE_WITH_TOKEN,
+    })
 
-    const buffer: Buffer = Buffer.from(JSON.stringify(metadata));
-    const memo = buffer.toString("hex")
-
-    const payload = getMsgIBCTransfer(sender, "channel-1", amount, memo)
+    const payload = getMsgIBCTransfer(sender, "channel-1", amount, Metadata.encode(metadata).finish())
 
     console.log("Payload", JSON.stringify(payload))
 

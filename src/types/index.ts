@@ -1,5 +1,5 @@
 import { Coin } from "@cosmjs/stargate";
-import { ContractCallWithTokenEventObject } from "./contracts/IAxelarGatewayAbi";
+import { ContractCallWithTokenEventObject } from "./contracts/IAxelarGateway";
 import { Height } from "cosmjs-types/ibc/core/client/v1/client";
 
 export interface ContractCallWithTokenListenerEvent {
