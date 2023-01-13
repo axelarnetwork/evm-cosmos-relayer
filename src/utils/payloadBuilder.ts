@@ -68,7 +68,7 @@ export function getMsgIBCTransfer(
   amount: string,
   memo: string
 ) {
-  const axelarModuleAccount = "axelar19xj4ncc6h6y5ahpfqtspdx75y3dkrxj3zpah9k"
+    const axelarModuleAccount = "axelar19xj4ncc6h6y5ahpfqtspdx75y3dkrxj3zpah9k"
     const sourcePort = "transfer";
     const timeoutHeight: Height = {
       revisionHeight: Long.fromNumber(100),
@@ -78,6 +78,7 @@ export function getMsgIBCTransfer(
       amount,
       denom: 'ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5'
     };
+
   return [{
     typeUrl: `/${protobufPackage}.MsgTransfer`,
     value: MsgTransfer.fromPartial({

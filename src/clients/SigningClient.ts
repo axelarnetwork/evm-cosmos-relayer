@@ -48,6 +48,7 @@ export class SigningClient {
     });
     const registry = new Registry();
     registry.register("/ibc.applications.transfer.v1.MsgTransfer", MsgTransfer)
+    // registry.register("/gmpdemo.Msg/MultiSend", MsgTransfer)
     const sdk = await AxelarSigningClient.initOrGetAxelarSigningClient({
       environment: Environment.DEVNET,
       axelarRpcUrl: config.rpcUrl,
