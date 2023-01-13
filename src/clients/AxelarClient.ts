@@ -3,6 +3,7 @@ import { StdFee } from "@cosmjs/stargate";
 import {
   getConfirmGatewayTxPayload,
   getExecuteGeneralMessageWithTokenPayload,
+  getSignCommandPayload,
 } from "../utils/payloadBuilder";
 import { sleep } from "../utils/utils";
 import { sha256 } from "ethers/lib/utils";
@@ -10,6 +11,7 @@ import ReconnectingWebSocket from "reconnecting-websocket";
 import { Subject } from "rxjs";
 import { IBCPacketEvent } from "../types";
 import WebSocket from 'isomorphic-ws';
+import {SignCommandsRequest} from '@axelar-network/axelarjs-types/axelar/evm/v1beta1/tx'
 import { SigningClient } from ".";
 
 export class AxelarClient {
@@ -34,6 +36,24 @@ export class AxelarClient {
       txHash
     );
     return this.signingClient.broadcast(payload);
+  }
+
+  public getPendingCommands(chain: string) {
+    return this.signingClient.queryClient.evm.PendingCommands({
+      chain,
+    });
+  }
+
+  public signCommands(chain: string) {
+    const payload = getSignCommandPayload(chain)
+    return this.signingClient.broadcast(payload)
+  }
+
+  public getBatchCommands(chain: string, id: string) {
+    return this.signingClient.queryClient.evm.BatchedCommands({
+      chain,
+      id
+    });
   }
 
   public async executeGeneralMessageWithToken(

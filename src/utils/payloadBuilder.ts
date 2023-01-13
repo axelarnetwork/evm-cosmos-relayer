@@ -1,10 +1,11 @@
 import {
   ConfirmGatewayTxRequest as EvmConfirmGatewayTxRequest,
   protobufPackage as EvmProtobufPackage,
+  SignCommandsRequest as EvmSignCommandsRequest,
 } from "@axelar-network/axelarjs-types/axelar/evm/v1beta1/tx";
 import {
   MsgTransfer,
-  protobufPackage
+  protobufPackage,
 } from '@axelar-network/axelarjs-types/ibc/applications/transfer/v1/tx'
 // import {} from "@axelar-network/axelarjs-types/axelar/evm/v1beta1/event";
 import { Height } from "cosmjs-types/ibc/core/client/v1/client";
@@ -60,6 +61,17 @@ export function getExecuteGeneralMessageWithTokenPayload(
       }),
     },
   ];
+}
+
+export function getSignCommandPayload(
+  chain: string
+) {
+  return {
+    typeUrl: "/${EvmProtobufPackage}.SignCommandsRequest",
+    value: EvmSignCommandsRequest.fromPartial({
+      chain
+    })
+  }
 }
 
 export function getMsgIBCTransfer(
