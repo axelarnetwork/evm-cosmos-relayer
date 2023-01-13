@@ -66,12 +66,12 @@ export function getExecuteGeneralMessageWithTokenPayload(
 export function getSignCommandPayload(
   chain: string
 ) {
-  return {
+  return [{
     typeUrl: "/${EvmProtobufPackage}.SignCommandsRequest",
     value: EvmSignCommandsRequest.fromPartial({
       chain
     })
-  }
+  }]
 }
 
 export function getMsgIBCTransfer(
