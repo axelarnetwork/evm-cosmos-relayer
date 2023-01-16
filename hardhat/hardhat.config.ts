@@ -4,6 +4,7 @@ import "@nomiclabs/hardhat-etherscan";
 // import "@nomicfoundation/hardhat-toolbox";
 import { evm } from "./constant";
 import "./tasks/multiSend";
+import "./tasks/balance"
 
 const config: HardhatUserConfig = {
   solidity: "0.8.9",
