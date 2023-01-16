@@ -111,9 +111,9 @@ async function main() {
   const evm = config.evm['ganache-0'];
   const observedDestinationChains = [config.cosmos.demo.chainId];
   const listener = new GMPListenerClient(evm.rpcUrl, evm.gateway);
+  const evmClient = new EvmClient(config.evm['ganache-0']);
   const vxClient = await AxelarClient.init(config.cosmos.devnet);
   const demoClient = await AxelarClient.init(config.cosmos.demo);
-  const evmClient = new EvmClient(config.evm['ganache-0']);
 
   // Create an event subject for ContractCallWithTokenListenerEvent
   const evmWithTokenObservable = new Subject<
@@ -135,22 +135,20 @@ async function main() {
         observedDestinationChains.includes(event.args.destinationChain)
       )
     )
-    .subscribe(async (event) => {
-      handleReceiveGMPEvm(vxClient, event);
-    });
+    .subscribe((event) => handleReceiveGMPEvm(vxClient, event));
 
   // Subscribe to the gmp event from cosmos to evm when it's already approved.
-  evmApproveWithTokenObservable.subscribe(async (event) => {
-    handleReceiveGMPApproveEvm(evmClient, event);
-  });
+  evmApproveWithTokenObservable.subscribe((event) =>
+    handleReceiveGMPApproveEvm(evmClient, event)
+  );
 
-  cosmosWithTokenObservable.subscribe(async (event) => {
-    handleReceiveGMPCosmos(vxClient, evmClient, event);
-  });
+  cosmosWithTokenObservable.subscribe((event) =>
+    handleReceiveGMPCosmos(vxClient, evmClient, event)
+  );
 
-  cosmosCompleteObservable.subscribe(async (event) => {
-    handleCompleteGMPCosmos(demoClient, event);
-  });
+  cosmosCompleteObservable.subscribe((event) =>
+    handleCompleteGMPCosmos(demoClient, event)
+  );
 
   // Pass the subject to the event listener, so that the listener can push events to the subject
   listener.listenEVM(evmWithTokenObservable, evmApproveWithTokenObservable);
