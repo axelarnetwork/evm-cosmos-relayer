@@ -9,7 +9,7 @@ import { sleep } from '../utils/utils';
 import { sha256 } from 'ethers/lib/utils';
 import ReconnectingWebSocket from 'reconnecting-websocket';
 import { Subject } from 'rxjs';
-import { IBCGMPEvent, IBCPacketEvent } from '../types';
+import { IBCEvent, IBCPacketEvent } from '../types';
 import WebSocket from 'isomorphic-ws';
 import { SigningClient } from '.';
 import { parseGMPEvent } from '../utils/parseUtils';
@@ -135,7 +135,7 @@ export class AxelarClient {
   }
 
   public listenForCosmosGMP(
-    subject: Subject<IBCGMPEvent<ContractCallWithTokenEventObject>>
+    subject: Subject<IBCEvent<ContractCallWithTokenEventObject>>
   ) {
     // Debugging Purpose: Logging balance update
     const options = {

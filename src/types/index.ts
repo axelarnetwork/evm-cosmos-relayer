@@ -17,11 +17,11 @@ export interface IBCPacketEvent {
   sequence: number;
 }
 
-export interface IBCGMPEvent<T> {
+export interface IBCEvent<T> {
   hash: string;
   srcChannel: string;
   destChannel: string;
-  args: T
+  args: T;
 }
 
 export interface PaginationParams {

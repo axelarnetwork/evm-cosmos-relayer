@@ -70,10 +70,10 @@ export class GMPListenerClient {
   }
 
   public async listenEVM(
-    contractCallWithTokenEventSubject: Subject<
+    evmWithTokenObservable: Subject<
       EvmEvent<ContractCallWithTokenEventObject>
     >,
-    contractCallApprovedWithMintEventSubject: Subject<
+    evmApproveWithTokenObservable: Subject<
       EvmEvent<ContractCallApprovedWithMintEventObject>
     >
   ) {
@@ -84,10 +84,12 @@ export class GMPListenerClient {
     this.currentBlock = await this.gatewayContract.provider.getBlockNumber();
     console.log('Current block number:', this.currentBlock);
 
-    this.listenCallContractWithToken(contractCallWithTokenEventSubject);
+    // listen for gmp event that originates from the evm chain.
+    this.listenCallContractWithToken(evmWithTokenObservable);
 
+    // listen for the gmp approve event at the evm chain where it is sent from cosmos.
     this.listenCallContractWithTokenApprove(
-      contractCallApprovedWithMintEventSubject
+      evmApproveWithTokenObservable
     );
   }
 }

@@ -1,4 +1,4 @@
-import { IBCGMPEvent } from '../types';
+import { IBCEvent } from '../types';
 import { ContractCallWithTokenEventObject } from '../types/contracts/IAxelarGateway';
 import { decodeBase64, removeQuote } from './utils';
 
@@ -28,7 +28,7 @@ export const getBatchCommandIdFromSignTx = (signTx: any) => {
 
 export const parseGMPEvent = (
   event: any
-): IBCGMPEvent<ContractCallWithTokenEventObject> => {
+): IBCEvent<ContractCallWithTokenEventObject> => {
   const key = 'axelar.axelarnet.v1beta1.GeneralMessageApprovedWithToken';
   const coin = JSON.parse(event[`${key}.coin`][0]);
   const data = {
