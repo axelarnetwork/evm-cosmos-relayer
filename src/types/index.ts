@@ -1,12 +1,11 @@
-import { Coin } from "@cosmjs/stargate";
-import { ContractCallWithTokenEventObject } from "./contracts/IAxelarGateway";
-import { Height } from "cosmjs-types/ibc/core/client/v1/client";
+import { Coin } from '@cosmjs/stargate';
+import { Height } from 'cosmjs-types/ibc/core/client/v1/client';
 
-export interface ContractCallWithTokenListenerEvent {
+export interface EvmEvent<T> {
   hash: string;
   blockNumber: number;
   logIndex: number;
-  args: ContractCallWithTokenEventObject;
+  args: T;
 }
 
 export interface IBCPacketEvent {
@@ -18,13 +17,20 @@ export interface IBCPacketEvent {
   sequence: number;
 }
 
+export interface IBCGMPEvent<T> {
+  hash: string;
+  srcChannel: string;
+  destChannel: string;
+  args: T
+}
+
 export interface PaginationParams {
   page: number;
   limit: number;
   orderBy: {
-    created_at: 'asc' | 'desc';
-    updated_at: 'asc' | 'desc';
-  },
+    createdAt: 'asc' | 'desc';
+    updatedAt: 'asc' | 'desc';
+  };
   completed: boolean;
 }
 
@@ -34,14 +40,6 @@ export interface LinkRequest {
   recipientAddr: string;
   asset: string;
   recipientChain: string;
-}
-
-export interface GeneralMsgWithToken {
-  sender: string;
-  destChain: string;
-  destAddress: string;
-  payload: string;
-  type: string;
 }
 
 export interface MsgTransfer {

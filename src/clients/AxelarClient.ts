@@ -1,27 +1,27 @@
-import { CosmosNetworkConfig } from "../config/types";
-import { StdFee } from "@cosmjs/stargate";
+import { CosmosNetworkConfig } from '../config/types';
+import { StdFee } from '@cosmjs/stargate';
 import {
   getConfirmGatewayTxPayload,
   getExecuteGeneralMessageWithTokenPayload,
   getSignCommandPayload,
-} from "../utils/payloadBuilder";
-import { sleep } from "../utils/utils";
-import { sha256 } from "ethers/lib/utils";
-import ReconnectingWebSocket from "reconnecting-websocket";
-import { Subject } from "rxjs";
-import { IBCPacketEvent } from "../types";
+} from '../utils/payloadBuilder';
+import { sleep } from '../utils/utils';
+import { sha256 } from 'ethers/lib/utils';
+import ReconnectingWebSocket from 'reconnecting-websocket';
+import { Subject } from 'rxjs';
+import { IBCGMPEvent, IBCPacketEvent } from '../types';
 import WebSocket from 'isomorphic-ws';
-import {SignCommandsRequest} from '@axelar-network/axelarjs-types/axelar/evm/v1beta1/tx'
-import { SigningClient } from ".";
+import { SigningClient } from '.';
+import { parseGMPEvent } from '../utils/parseUtils';
+import { ContractCallWithTokenEventObject } from '../types/contracts/IAxelarGateway';
 
 export class AxelarClient {
   public signingClient: SigningClient;
   public ws: ReconnectingWebSocket | undefined;
+  public gmpWs: ReconnectingWebSocket | undefined;
 
-  constructor(
-    _signingClient: SigningClient,
-  ) {
-    this.signingClient = _signingClient
+  constructor(_signingClient: SigningClient) {
+    this.signingClient = _signingClient;
   }
 
   static async init(_config?: CosmosNetworkConfig) {
@@ -39,21 +39,37 @@ export class AxelarClient {
   }
 
   public getPendingCommands(chain: string) {
-    return this.signingClient.queryClient.evm.PendingCommands({
-      chain,
-    });
+    return this.signingClient.queryClient.evm
+      .PendingCommands({
+        chain,
+      })
+      .then((result) => result.commands);
   }
 
   public signCommands(chain: string) {
-    const payload = getSignCommandPayload(chain)
-    return this.signingClient.broadcast(payload)
+    const payload = getSignCommandPayload(
+      this.signingClient.getAddress(),
+      chain
+    );
+    return this.signingClient.broadcast(payload);
   }
 
-  public getBatchCommands(chain: string, id: string) {
-    return this.signingClient.queryClient.evm.BatchedCommands({
+  public async getExecuteDataFromBatchCommands(chain: string, id: string) {
+    // wait until status: 3
+    let response = await this.signingClient.queryClient.evm.BatchedCommands({
       chain,
-      id
+      id,
     });
+
+    while (response.status !== 3) {
+      await sleep(3000);
+      response = await this.signingClient.queryClient.evm.BatchedCommands({
+        chain,
+        id,
+      });
+    }
+
+    return '0x' + response.executeData;
   }
 
   public async executeGeneralMessageWithToken(
@@ -73,7 +89,7 @@ export class AxelarClient {
   }
 
   public setFee(fee: StdFee) {
-    this.signingClient.fee = fee
+    this.signingClient.fee = fee;
   }
 
   private getEvent(chain: string, eventId: string) {
@@ -91,14 +107,16 @@ export class AxelarClient {
     return !!event?.event?.contractCallWithToken;
   }
 
-  public async pollEvent(chain: string,
+  public async pollEvent(
+    chain: string,
     eventId: string,
-    pollingInterval = 1000) {
-      let attempt = 0;
+    pollingInterval = 1000
+  ) {
+    let attempt = 0;
 
-    while(attempt < 3){
+    while (attempt < 3) {
       const event = await this.getEvent(chain, eventId).catch(() => undefined);
-      console.log(event)
+      console.log(event);
       await sleep(pollingInterval);
       attempt++;
     }
@@ -116,6 +134,53 @@ export class AxelarClient {
     }
   }
 
+  public listenForCosmosGMP(
+    subject: Subject<IBCGMPEvent<ContractCallWithTokenEventObject>>
+  ) {
+    // Debugging Purpose: Logging balance update
+    const options = {
+      WebSocket, // custom WebSocket constructor
+      connectionTimeout: 1000,
+      maxRetries: 10,
+    };
+
+    if (this.gmpWs) {
+      return this.gmpWs.reconnect();
+    }
+
+    this.gmpWs = new ReconnectingWebSocket(
+      this.signingClient.config.ws,
+      [],
+      options
+    );
+
+    const topic = `tm.event='Tx' AND axelar.axelarnet.v1beta1.GeneralMessageApprovedWithToken.source_chain EXISTS`;
+
+    this.gmpWs.send(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'subscribe',
+        params: [topic],
+      })
+    );
+    this.gmpWs.addEventListener('message', (ev: MessageEvent<any>) => {
+      // convert buffer to json
+      const event = JSON.parse(ev.data.toString());
+
+      // check if the event topic is matched
+      if (!event.result || event.result.query !== topic) return;
+      // console.log('log event', JSON.stringify(event));
+
+      // parse the event data
+      const data = parseGMPEvent(event.result.events);
+
+      console.log(data);
+
+      subject.next(data);
+    });
+  }
+
   public listenForIBCComplete(subject: Subject<IBCPacketEvent>) {
     // Debugging Purpose: Logging balance update
     const options = {
@@ -124,52 +189,61 @@ export class AxelarClient {
       maxRetries: 10,
     };
 
-    if(this.ws) {
+    if (this.ws) {
       return this.ws.reconnect();
     }
 
-    this.ws = new ReconnectingWebSocket(this.signingClient.config.ws, [], options);
+    this.ws = new ReconnectingWebSocket(
+      this.signingClient.config.ws,
+      [],
+      options
+    );
 
-    const topic = `tm.event='Tx' AND acknowledge_packet.packet_dst_port='transfer'`
+    const topic = `tm.event='Tx' AND acknowledge_packet.packet_dst_port='transfer'`;
 
-    this.ws.send(JSON.stringify({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'subscribe',
-      params: [topic]
-    }))
+    this.ws.send(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'subscribe',
+        params: [topic],
+      })
+    );
     this.ws.addEventListener('message', (ev: MessageEvent<any>) => {
       // convert buffer to json
-      const event = JSON.parse(ev.data.toString())
+      const event = JSON.parse(ev.data.toString());
 
       // check if the event topic is matched
-      if(event.result.query !== topic) return;
+      if (event.result.query !== topic) return;
 
       // parse the event data
-      const sequence = parseInt(event.result.events['acknowledge_packet.packet_sequence'][0])
-      const amount = event.result.events['fungible_token_packet.amount'][0]
-      const denom = event.result.events['fungible_token_packet.denom'][0]
-      const destChannel = event.result.events['acknowledge_packet.packet_dst_channel'][0]
-      const srcChannel = event.result.events['acknowledge_packet.packet_src_channel'][0]
-      const hash = event.result.events['tx.hash'][0]
+      const data = {
+        sequence: parseInt(
+          event.result.events['acknowledge_packet.packet_sequence'][0]
+        ),
+        amount: event.result.events['fungible_token_packet.amount'][0],
+        denom: event.result.events['fungible_token_packet.denom'][0],
+        destChannel:
+          event.result.events['acknowledge_packet.packet_dst_channel'][0],
+        srcChannel:
+          event.result.events['acknowledge_packet.packet_src_channel'][0],
+        hash: event.result.events['tx.hash'][0],
+      };
 
       // emit the event
-      subject.next({
-        sequence,
-        amount,
-        denom,
-        destChannel,
-        hash,
-        srcChannel
-      })
-    })
+      subject.next(data);
+    });
   }
 
-  public async calculateTokenIBCPath(destChannelId: string, denom: string, port = "transfer") {
-   return sha256(Buffer.from(`${port}/${destChannelId}/${denom}`, "hex"));
+  public async calculateTokenIBCPath(
+    destChannelId: string,
+    denom: string,
+    port = 'transfer'
+  ) {
+    return sha256(Buffer.from(`${port}/${destChannelId}/${denom}`, 'hex'));
   }
 
   public async getBalance(address: string, denom?: string) {
-    return this.signingClient.getBalance(address, denom)
+    return this.signingClient.getBalance(address, denom);
   }
 }
