@@ -1,5 +1,7 @@
 import hapi, { Request } from '@hapi/hapi';
+import { prisma } from '..';
 import Joi from 'joi';
+import { PaginationParams } from './types';
 
 export const initServer = async () => {
   const server = hapi.server({
