@@ -5,10 +5,6 @@ import { EncodeObject } from '@cosmjs/proto-signing';
 import { StdFee } from '@cosmjs/stargate';
 import { MsgTransfer } from '@axelar-network/axelarjs-types/ibc/applications/transfer/v1/tx';
 import {
-  protobufPackage as EvmProtobufPackage,
-  SignCommandsRequest as EvmSignCommandsRequest,
-} from '@axelar-network/axelarjs-types/axelar/evm/v1beta1/tx';
-import {
   AxelarQueryClient,
   AxelarQueryClientType,
 } from '@axelar-network/axelarjs-sdk/dist/src/libs/AxelarQueryClient';
@@ -48,10 +44,6 @@ export class SigningClient {
     });
     const registry = new Registry();
     registry.register('/ibc.applications.transfer.v1.MsgTransfer', MsgTransfer);
-    // registry.register(
-    //   `/${EvmProtobufPackage}.SignCommandsRequest`,
-    //   EvmSignCommandsRequest
-    // );
     const sdk = await AxelarSigningClient.initOrGetAxelarSigningClient({
       environment: Environment.DEVNET,
       axelarRpcUrl: config.rpcUrl,
