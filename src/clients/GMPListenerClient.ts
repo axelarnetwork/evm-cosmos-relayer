@@ -81,7 +81,7 @@ export class GMPListenerClient {
 
     // update block number
     this.currentBlock = await this.gatewayContract.provider.getBlockNumber();
-    logger.info('Current block number:', this.currentBlock);
+    logger.info(`Current block number: ${this.currentBlock}`);
 
     // listen for gmp event that originates from the evm chain.
     this.listenCallContractWithToken(evmWithTokenObservable);

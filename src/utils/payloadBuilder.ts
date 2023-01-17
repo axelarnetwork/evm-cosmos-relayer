@@ -94,7 +94,7 @@ export function getMsgIBCTransfer(
       'ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5',
   };
 
-  logger.info('memo', Buffer.from(memo).toString('hex'));
+  logger.info(`memo: ${Buffer.from(memo).toString('hex')}`);
 
   return [
     {

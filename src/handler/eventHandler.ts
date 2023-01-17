@@ -18,8 +18,9 @@ export async function handleReceiveGMPEvm(
   vxClient: AxelarClient,
   event: EvmEvent<ContractCallWithTokenEventObject>
 ) {
+  logger.info(`Received event ${JSON.stringify(event)}`);
   const id = `${event.hash}-${event.logIndex}`;
-  const tx1 = await prisma.relayData.create({
+  await prisma.relayData.create({
     data: {
       id,
       from: 'ganache-0',
@@ -36,14 +37,13 @@ export async function handleReceiveGMPEvm(
       },
     },
   });
-  logger.info('Received event, saved to the db:', tx1);
 
   // Sent a confirm tx to devnet-vx
   const confirmTx = await vxClient.confirmEvmTx(
     config.evm['ganache-0'].name,
     event.hash
   );
-  logger.info('Confirmed:', confirmTx.transactionHash);
+  logger.info(`Confirmed: ${confirmTx.transactionHash}`);
   await vxClient.pollUntilContractCallWithTokenConfirmed(
     config.evm['ganache-0'].name,
     `${event.hash}-${event.logIndex}`
@@ -56,11 +56,11 @@ export async function handleReceiveGMPEvm(
     event.hash,
     event.args.payload
   );
-  logger.info('Executed:', executeTx.transactionHash);
+  logger.info(`Executed: ${executeTx.transactionHash}`);
   const packetSequence = getPacketSequenceFromExecuteTx(executeTx);
 
   // save data to db.
-  const tx2 = await prisma.relayData.update({
+  const updatedData = await prisma.relayData.update({
     where: {
       id,
     },
@@ -69,7 +69,7 @@ export async function handleReceiveGMPEvm(
       packetSequence,
     },
   });
-  logger.info('updated the status to 1', tx2);
+  logger.info(`Updated to db: ${JSON.stringify(updatedData)}`);
 }
 
 export async function handleReceiveGMPCosmos(
@@ -104,22 +104,22 @@ export async function handleReceiveGMPCosmos(
     event.args.destinationChain
   );
 
-  logger.info('pending commands:', pendingCommands);
+  logger.info(`pending commands: ${JSON.stringify(pendingCommands)}`);
   if (pendingCommands.length === 0) return;
 
   const signCommand = await vxClient.signCommands(event.args.destinationChain);
   const batchedCommandId = getBatchCommandIdFromSignTx(signCommand);
-  logger.info('batched command id :', batchedCommandId);
+  logger.info(`batched command id: ${batchedCommandId}`);
 
   const executeData = await vxClient.getExecuteDataFromBatchCommands(
     event.args.destinationChain,
     batchedCommandId
   );
 
-  logger.info('batch commands:', executeData);
+  logger.info(`Batch commands: ${JSON.stringify(executeData)}`);
 
   const tx = await evmClient.execute(executeData);
-  logger.info('execute:', tx);
+  logger.info(`Execute: ${tx.transactionHash}`);
 
   // update relay data
   await prisma.relayData.update({
@@ -137,7 +137,9 @@ export async function handleReceiveGMPApproveEvm(
   evmClient: EvmClient,
   event: EvmEvent<ContractCallApprovedWithMintEventObject>
 ) {
-  logger.info('Received event execute:', event);
+  logger.info(
+    `Received event handleReceiveGMPApproveEvm: ${JSON.stringify(event)}}`
+  );
   const {
     amount,
     commandId,
@@ -166,8 +168,7 @@ export async function handleReceiveGMPApproveEvm(
 
   if (!data)
     return logger.info(
-      'cannot find payload from given payloadHash:',
-      payloadHash
+      `Cannot find payload from given payloadHash: ${payloadHash}`
     );
 
   const { payload, id } = data;
@@ -194,7 +195,7 @@ export async function handleReceiveGMPApproveEvm(
     },
   });
 
-  logger.info('execute with token db', executeWithTokenDb);
+  logger.info(`execute with token db ${JSON.stringify(executeWithTokenDb)}`);
 }
 
 export async function handleCompleteGMPCosmos(
@@ -220,7 +221,7 @@ export async function handleCompleteGMPCosmos(
         'ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5'
       )
       .then((balance) => {
-        logger.info('Balance:', balance);
+        logger.info(`Balance:${balance}`);
       });
   }
 }
