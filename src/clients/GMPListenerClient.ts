@@ -1,28 +1,30 @@
-import { ethers } from "ethers";
-import { Subject } from "rxjs";
+import { ethers } from 'ethers';
+import { Subject } from 'rxjs';
 import {
-  IAxelarGatewayAbi__factory,
-  IAxelarGatewayAbi,
-} from "../types/contracts/index";
-export { ContractCallWithTokenEventObject } from "../types/contracts/IAxelarGatewayAbi";
-import { ContractCallWithTokenListenerEvent } from "../types";
-import { filterEventArgs } from "../utils/filterUtils";
+  IAxelarGateway__factory,
+  IAxelarGateway,
+} from '../types/contracts/index';
+export {
+  ContractCallWithTokenEventObject,
+  ContractCallApprovedWithMintEventObject,
+} from '../types/contracts/IAxelarGateway';
+import { EvmEvent } from '../types';
+import { filterEventArgs } from '../utils/filterUtils';
+import { ContractCallWithTokenEventObject } from '.';
+import { ContractCallApprovedWithMintEventObject } from '../types/contracts/IAxelarGatewayAbi';
 
 export class GMPListenerClient {
-  gatewayContract: IAxelarGatewayAbi;
+  gatewayContract: IAxelarGateway;
   private currentBlock = 0;
-  private targetChains = ["demo-chain"];
+  private targetChains = ['demo-chain'];
 
   constructor(rpcUrl: string, gateway: string) {
     const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
-    this.gatewayContract = IAxelarGatewayAbi__factory.connect(
-      gateway,
-      provider
-    );
+    this.gatewayContract = IAxelarGateway__factory.connect(gateway, provider);
   }
 
   private async listenCallContractWithToken(
-    subject: Subject<ContractCallWithTokenListenerEvent>
+    subject: Subject<EvmEvent<ContractCallWithTokenEventObject>>
   ) {
     const filter = this.gatewayContract.filters.ContractCallWithToken(
       null,
@@ -50,14 +52,44 @@ export class GMPListenerClient {
     });
   }
 
-  public async listenEVM(subject: Subject<ContractCallWithTokenListenerEvent>) {
+  private async listenCallContractWithTokenApprove(
+    subject: Subject<EvmEvent<ContractCallApprovedWithMintEventObject>>
+  ) {
+    const filter = this.gatewayContract.filters.ContractCallApprovedWithMint();
+    this.gatewayContract.on(filter, (...args) => {
+      const event = args[9];
+      if (event.blockNumber <= this.currentBlock) return;
+
+      subject.next({
+        hash: event.transactionHash,
+        blockNumber: event.blockNumber,
+        logIndex: event.logIndex,
+        args: filterEventArgs(event),
+      });
+    });
+  }
+
+  public async listenEVM(
+    evmWithTokenObservable: Subject<
+      EvmEvent<ContractCallWithTokenEventObject>
+    >,
+    evmApproveWithTokenObservable: Subject<
+      EvmEvent<ContractCallApprovedWithMintEventObject>
+    >
+  ) {
     // clear all listeners before subscribe a new one.
     this.gatewayContract.removeAllListeners();
 
     // update block number
     this.currentBlock = await this.gatewayContract.provider.getBlockNumber();
-    console.log("Current block number:", this.currentBlock);
+    console.log('Current block number:', this.currentBlock);
 
-    this.listenCallContractWithToken(subject);
+    // listen for gmp event that originates from the evm chain.
+    this.listenCallContractWithToken(evmWithTokenObservable);
+
+    // listen for the gmp approve event at the evm chain where it is sent from cosmos.
+    this.listenCallContractWithTokenApprove(
+      evmApproveWithTokenObservable
+    );
   }
 }

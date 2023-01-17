@@ -6,3 +6,10 @@ export interface CosmosNetworkConfig {
   denom: string;
   mnemonic: string;
 }
+
+export interface EvmNetworkConfig {
+  name: string,
+  rpcUrl: string,
+  gateway: string,
+  privateKey: string
+}

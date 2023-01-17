@@ -8,8 +8,14 @@ up:
 down:
 	docker-compose down
 
+logs:
+	docker logs db -f
+
 prisma-pull:
 	npx prisma db pull
 
 prisma-generate:
 	npx prisma generate
+
+prisma-push:
+	npx prisma db push
