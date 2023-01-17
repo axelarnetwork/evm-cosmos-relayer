@@ -32,6 +32,9 @@ export interface PaginationParams {
     updatedAt: 'asc' | 'desc';
   };
   completed: boolean;
+  include: {
+    callContractWithToken: boolean;
+  };
 }
 
 export interface LinkRequest {

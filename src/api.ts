@@ -11,12 +11,15 @@ export const initServer = async () => {
 
   server.route({
     method: 'GET',
-    path: '/relayTx',
+    path: '/tx.get',
     handler: async (request) => {
       const { txHash, logIndex } = request.query;
       const data = await prisma.relayData.findFirst({
         where: {
           id: `${txHash}-${logIndex}`,
+        },
+        include: {
+          callContractWithToken: true,
         },
       });
 
@@ -38,13 +41,16 @@ export const initServer = async () => {
   // get all relay data in pagination
   server.route({
     method: 'POST',
-    path: '/relayTx.all',
+    path: '/tx.all',
     options: {
       auth: false,
       validate: {
         payload: Joi.object({
           page: Joi.number().integer().min(0).default(0),
           limit: Joi.number().integer().min(1).max(100).default(10),
+          include: {
+            callContractWithToken: Joi.boolean().default(false),
+          },
           orderBy: Joi.object()
             .keys({
               createdAt: Joi.string().valid('asc', 'desc').default('desc'),
@@ -59,7 +65,7 @@ export const initServer = async () => {
     },
     handler: async (request: Request) => {
       const payload = request.payload as PaginationParams;
-      const { page, limit, orderBy, completed } = payload;
+      const { page, limit, orderBy, completed, include } = payload;
 
       const filtering = completed
         ? {
@@ -74,6 +80,7 @@ export const initServer = async () => {
         skip: page * limit,
         take: limit,
         orderBy,
+        include,
         where: filtering,
       });
 
