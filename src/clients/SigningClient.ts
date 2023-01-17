@@ -1,5 +1,5 @@
 import { CosmosNetworkConfig } from '../config/types';
-import { config as appConfig } from '../config';
+import { config as appConfig, env } from '../config';
 import { AxelarSigningClient, Environment } from '@axelar-network/axelarjs-sdk';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { StdFee } from '@cosmjs/stargate';
@@ -16,15 +16,21 @@ export class SigningClient {
   public sdk: AxelarSigningClient;
   public queryClient: AxelarQueryClientType;
   public fee: StdFee;
+  public maxRetries: number;
+  public retryDelay: number;
 
   constructor(
     sdk: AxelarSigningClient,
     client: AxelarQueryClientType,
-    config?: CosmosNetworkConfig
+    config?: CosmosNetworkConfig,
+    _maxRetries = env.MAX_RETRY,
+    _retryDelay = env.RETRY_DELAY
   ) {
     this.config = config || appConfig.cosmos.devnet;
     this.sdk = sdk;
     this.queryClient = client;
+    this.maxRetries = _maxRetries;
+    this.retryDelay = _retryDelay;
     this.fee = {
       amount: [
         {
@@ -68,15 +74,21 @@ export class SigningClient {
 
   public broadcast<T extends EncodeObject[]>(
     payload: T,
-    memo?: string
+    memo?: string,
+    retries = 0
   ): Promise<any> {
+    if (retries >= this.maxRetries) throw new Error('Max retries exceeded');
     return this.sdk
       .signThenBroadcast(payload, this.fee, memo)
       .catch(async (e: any) => {
         if (e.message.includes('account sequence mismatch')) {
-          console.log('Account sequence mismatch, retrying in 3 seconds...');
-          await sleep(3000);
-          return this.broadcast(payload);
+          console.log(
+            `Account sequence mismatch, retrying in ${
+              this.retryDelay / 1000
+            } seconds...`
+          );
+          await sleep(this.retryDelay);
+          return this.broadcast(payload, memo, retries + 1);
         }
 
         throw e;
