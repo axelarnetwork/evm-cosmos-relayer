@@ -66,12 +66,13 @@ export class EvmClient {
     retryAttempt = 0
   ): Promise<ethers.providers.TransactionReceipt> {
     // submit tx with retries
-    if (retryAttempt > this.maxRetry) throw new Error('Max retry exceeded');
+    if (retryAttempt >= this.maxRetry) throw new Error('Max retry exceeded');
     return this.wallet
       .sendTransaction(tx)
       .then((t) => t.wait())
       .catch(async () => {
         await sleep(this.retryDelay);
+        console.log(`Retrying tx: ${retryAttempt}`);
         return this.submitTx(tx, retryAttempt + 1);
       });
   }
