@@ -16,7 +16,25 @@ export async function handleReceiveGMPEvm(
   vxClient: AxelarClient,
   event: EvmEvent<ContractCallWithTokenEventObject>
 ) {
-  console.log('Received event:', event);
+  const id = `${event.hash}-${event.logIndex}`;
+  const tx1 = await prisma.relayData.create({
+    data: {
+      id,
+      from: 'ganache-0',
+      to: 'demo-chain',
+      callContractWithToken: {
+        create: {
+          payload: event.args.payload,
+          payloadHash: event.args.payloadHash,
+          contractAddress: event.args.destinationContractAddress,
+          sourceAddress: event.args.sender,
+          amount: event.args.amount.toString(),
+          symbol: event.args.symbol,
+        },
+      },
+    },
+  });
+  console.log('Received event, saved to the db:', tx1);
 
   // Sent a confirm tx to devnet-vx
   const confirmTx = await vxClient.confirmEvmTx(
@@ -37,27 +55,19 @@ export async function handleReceiveGMPEvm(
     event.args.payload
   );
   console.log('Executed:', executeTx.transactionHash);
-  const packetSeq = getPacketSequenceFromExecuteTx(executeTx);
+  const packetSequence = getPacketSequenceFromExecuteTx(executeTx);
 
   // save data to db.
-  await prisma.relayData.create({
+  const tx2 = await prisma.relayData.update({
+    where: {
+      id,
+    },
     data: {
-      id: `${event.hash}-${event.logIndex}`,
-      packetSequence: packetSeq,
-      from: 'ganache-0',
-      to: 'demo-chain',
-      callContractWithToken: {
-        create: {
-          payload: event.args.payload,
-          payloadHash: event.args.payloadHash,
-          contractAddress: event.args.destinationContractAddress,
-          sourceAddress: event.args.sender,
-          amount: event.args.amount.toString(),
-          symbol: event.args.symbol,
-        },
-      },
+      status: 1,
+      packetSequence,
     },
   });
+  console.log('updated the status to 1', tx2);
 }
 
 export async function handleReceiveGMPCosmos(
