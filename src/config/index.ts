@@ -5,6 +5,8 @@ export const env = {
   DEV: process.env.DEV || false,
   AXELAR_MNEMONIC: process.env.AXELAR_MNEMONIC || '',
   EVM_PRIVATE_KEY: process.env.EVM_PRIVATE_KEY || '',
+  MAX_RETRY: parseInt(process.env.MAX_RETRY || '5'),
+  RETRY_DELAY: parseInt(process.env.RETRY_DELAY || '3000'),
   HERMES_METRIC_URL:
     process.env.HERMES_METRIC_URL || 'http://localhost:3001/metrics',
   DATABASE_URL:
