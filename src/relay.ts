@@ -32,8 +32,6 @@ async function main() {
   >();
   const cosmosCompleteObservable = new Subject<IBCPacketEvent>();
 
-  // Filter events by destination chain
-  // Subscribe to the gmp event from evm to cosmos.
   evmWithTokenObservable
     .pipe(
       filter((event) =>
@@ -42,7 +40,6 @@ async function main() {
     )
     .subscribe((event) => handleReceiveGMPEvm(vxClient, event));
 
-  // Subscribe to the gmp event from cosmos to evm when it's already approved.
   evmApproveWithTokenObservable.subscribe((event) =>
     handleReceiveGMPApproveEvm(evmClient, event)
   );
@@ -55,7 +52,7 @@ async function main() {
     handleCompleteGMPCosmos(demoClient, event)
   );
 
-  // Pass the subject to the event listener, so that the listener can push events to the subject
+  // listen for events on cosmos and evm
   listener.listenEVM(evmWithTokenObservable, evmApproveWithTokenObservable);
   vxClient.listenForCosmosGMP(cosmosWithTokenObservable);
   vxClient.listenForIBCComplete(cosmosCompleteObservable);
