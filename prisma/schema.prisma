@@ -24,7 +24,7 @@ model CallContractWithToken {
   contractAddress String    @db.VarChar(255)
   amount          String    @db.VarChar(255)
   symbol          String    @db.VarChar(255)
-  payload         String    @db.VarChar(255)
+  payload         String    @db.Text
   payloadHash     String    @db.VarChar(255)
   sourceAddress   String    @db.VarChar(255)
   createdAt       DateTime  @default(now()) @db.Timestamp(6)
