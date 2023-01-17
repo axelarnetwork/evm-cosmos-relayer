@@ -32,6 +32,7 @@ async function main() {
   >();
   const cosmosCompleteObservable = new Subject<IBCPacketEvent>();
 
+  /** ######## Handle events ########## */
   evmWithTokenObservable
     .pipe(
       filter((event) =>
@@ -52,6 +53,7 @@ async function main() {
     handleCompleteGMPCosmos(demoClient, event)
   );
 
+  // ########## Listens for events ##########
   // listen for events on cosmos and evm
   listener.listenEVM(evmWithTokenObservable, evmApproveWithTokenObservable);
   vxClient.listenForCosmosGMP(cosmosWithTokenObservable);
