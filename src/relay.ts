@@ -5,10 +5,12 @@ import { EvmEvent, IBCEvent, IBCPacketEvent } from './types';
 import { ContractCallWithTokenEventObject } from './types/contracts/IAxelarGatewayAbi';
 import { ContractCallApprovedWithMintEventObject } from './types/contracts/IAxelarGateway';
 import {
+  handleAnyError,
   handleCompleteGMPCosmos,
   handleReceiveGMPApproveEvm,
   handleReceiveGMPCosmos,
   handleReceiveGMPEvm,
+  prepareHandler,
 } from './handler';
 import { initServer } from './api';
 
@@ -16,7 +18,7 @@ async function main() {
   const evm = config.evm['ganache-0'];
   const observedDestinationChains = [config.cosmos.demo.chainId];
   const listener = new GMPListenerClient(evm.rpcUrl, evm.gateway);
-  const evmClient = new EvmClient(config.evm['ganache-0']);
+  const evmClient = new EvmClient(evm);
   const vxClient = await AxelarClient.init(config.cosmos.devnet);
   const demoClient = await AxelarClient.init(config.cosmos.demo);
 
@@ -39,19 +41,29 @@ async function main() {
         observedDestinationChains.includes(event.args.destinationChain)
       )
     )
-    .subscribe((event) => handleReceiveGMPEvm(vxClient, event));
+    .subscribe((event) => {
+      prepareHandler()
+        .then(() => handleReceiveGMPEvm(vxClient, event))
+        .catch((e) => handleAnyError('handleReceiveGMPEvm', e));
+    });
 
-  evmApproveWithTokenObservable.subscribe((event) =>
-    handleReceiveGMPApproveEvm(evmClient, event)
-  );
+  evmApproveWithTokenObservable.subscribe((event) => {
+    prepareHandler()
+      .then(() => handleReceiveGMPApproveEvm(evmClient, event))
+      .catch((e) => handleAnyError('handleReceiveGMPApproveEvm', e));
+  });
 
-  cosmosWithTokenObservable.subscribe((event) =>
-    handleReceiveGMPCosmos(vxClient, evmClient, event)
-  );
+  cosmosWithTokenObservable.subscribe((event) => {
+    prepareHandler()
+      .then(() => handleReceiveGMPCosmos(vxClient, evmClient, event))
+      .catch((e) => handleAnyError('handleReceiveGMPCosmos', e));
+  });
 
-  cosmosCompleteObservable.subscribe((event) =>
-    handleCompleteGMPCosmos(demoClient, event)
-  );
+  cosmosCompleteObservable.subscribe((event) => {
+    prepareHandler()
+      .then(() => handleCompleteGMPCosmos(demoClient, event))
+      .catch((e) => handleAnyError('handleCompleteGMPCosmos', e));
+  });
 
   // ########## Listens for events ##########
   // listen for events on cosmos and evm
@@ -64,4 +76,4 @@ console.log('Starting relayer server...');
 initServer();
 
 // handle error globally
-main().catch((e) => console.error(e));
+main();
