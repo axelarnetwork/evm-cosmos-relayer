@@ -63,4 +63,6 @@ async function main() {
 
 console.log('Starting relayer server...');
 initServer();
-main();
+
+// handle error globally
+main().catch((e) => console.error(e));
