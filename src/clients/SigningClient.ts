@@ -10,6 +10,7 @@ import {
 } from '@axelar-network/axelarjs-sdk/dist/src/libs/AxelarQueryClient';
 import { sleep } from '../utils/utils';
 import { Registry } from '@cosmjs/proto-signing';
+import { logger } from '../logger';
 
 export class SigningClient {
   public config: CosmosNetworkConfig;
@@ -82,7 +83,7 @@ export class SigningClient {
       .signThenBroadcast(payload, this.fee, memo)
       .catch(async (e: any) => {
         if (e.message.includes('account sequence mismatch')) {
-          console.log(
+          logger.info(
             `Account sequence mismatch, retrying in ${
               this.retryDelay / 1000
             } seconds...`

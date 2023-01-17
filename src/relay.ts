@@ -13,6 +13,7 @@ import {
   prepareHandler,
 } from './handler';
 import { initServer } from './api';
+import { logger } from './logger';
 
 async function main() {
   const evm = config.evm['ganache-0'];
@@ -72,7 +73,7 @@ async function main() {
   vxClient.listenForIBCComplete(cosmosCompleteObservable);
 }
 
-console.log('Starting relayer server...');
+logger.info('Starting relayer server...');
 initServer();
 
 // handle error globally

@@ -1,4 +1,5 @@
 import { SigningClient } from '.';
+import { logger } from '../logger';
 import { getMsgIBCTransfer } from '../utils/payloadBuilder';
 import {
   Metadata,
@@ -46,9 +47,9 @@ export class IbcClient {
       Metadata.encode(metadata).finish()
     );
 
-    console.log('Payload', JSON.stringify(payload));
+    logger.info('Payload', JSON.stringify(payload));
 
-    console.log(this.signingClient.getAddress());
+    logger.info(this.signingClient.getAddress());
 
     return this.signingClient.broadcast(payload);
   }

@@ -14,6 +14,7 @@ import WebSocket from 'isomorphic-ws';
 import { SigningClient } from '.';
 import { parseGMPEvent } from '../utils/parseUtils';
 import { ContractCallWithTokenEventObject } from '../types/contracts/IAxelarGateway';
+import { logger } from '../logger';
 
 export class AxelarClient {
   public signingClient: SigningClient;
@@ -116,7 +117,7 @@ export class AxelarClient {
 
     while (attempt < 3) {
       const event = await this.getEvent(chain, eventId).catch(() => undefined);
-      console.log(event);
+      logger.info(event);
       await sleep(pollingInterval);
       attempt++;
     }
@@ -170,12 +171,12 @@ export class AxelarClient {
 
       // check if the event topic is matched
       if (!event.result || event.result.query !== topic) return;
-      // console.log('log event', JSON.stringify(event));
+      // logger.info('log event', JSON.stringify(event));
 
       // parse the event data
       const data = parseGMPEvent(event.result.events);
 
-      console.log(data);
+      logger.info(data);
 
       subject.next(data);
     });

@@ -18,6 +18,7 @@ import { fromHex } from '@cosmjs/encoding';
 import { utils } from 'ethers';
 import { Coin } from '@cosmjs/stargate';
 import Long from 'long';
+import { logger } from '../logger';
 
 /**
  * Get payload for confirm gateway tx on evm chain
@@ -93,7 +94,7 @@ export function getMsgIBCTransfer(
       'ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5',
   };
 
-  console.log('memo', Buffer.from(memo).toString('hex'));
+  logger.info('memo', Buffer.from(memo).toString('hex'));
 
   return [
     {

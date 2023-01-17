@@ -4,6 +4,7 @@ import Joi from 'joi';
 import fetch from 'node-fetch';
 import { PaginationParams } from './types';
 import { PrismaClient } from '@prisma/client';
+import { logger } from './logger';
 
 export const initServer = async () => {
   const server = hapi.server({
@@ -120,5 +121,5 @@ export const initServer = async () => {
   });
 
   await server.start();
-  console.log('Server running on %s', server.info.uri);
+  logger.info('Server running on %s', server.info.uri);
 };

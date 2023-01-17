@@ -7,6 +7,7 @@ import {
   env,
   prisma,
 } from '..';
+import { logger } from '../logger';
 import { EvmEvent, IBCEvent, IBCPacketEvent } from '../types';
 import {
   getBatchCommandIdFromSignTx,
@@ -35,14 +36,14 @@ export async function handleReceiveGMPEvm(
       },
     },
   });
-  console.log('Received event, saved to the db:', tx1);
+  logger.info('Received event, saved to the db:', tx1);
 
   // Sent a confirm tx to devnet-vx
   const confirmTx = await vxClient.confirmEvmTx(
     config.evm['ganache-0'].name,
     event.hash
   );
-  console.log('Confirmed:', confirmTx.transactionHash);
+  logger.info('Confirmed:', confirmTx.transactionHash);
   await vxClient.pollUntilContractCallWithTokenConfirmed(
     config.evm['ganache-0'].name,
     `${event.hash}-${event.logIndex}`
@@ -55,7 +56,7 @@ export async function handleReceiveGMPEvm(
     event.hash,
     event.args.payload
   );
-  console.log('Executed:', executeTx.transactionHash);
+  logger.info('Executed:', executeTx.transactionHash);
   const packetSequence = getPacketSequenceFromExecuteTx(executeTx);
 
   // save data to db.
@@ -68,7 +69,7 @@ export async function handleReceiveGMPEvm(
       packetSequence,
     },
   });
-  console.log('updated the status to 1', tx2);
+  logger.info('updated the status to 1', tx2);
 }
 
 export async function handleReceiveGMPCosmos(
@@ -103,22 +104,22 @@ export async function handleReceiveGMPCosmos(
     event.args.destinationChain
   );
 
-  console.log('pending commands:', pendingCommands);
+  logger.info('pending commands:', pendingCommands);
   if (pendingCommands.length === 0) return;
 
   const signCommand = await vxClient.signCommands(event.args.destinationChain);
   const batchedCommandId = getBatchCommandIdFromSignTx(signCommand);
-  console.log('batched command id :', batchedCommandId);
+  logger.info('batched command id :', batchedCommandId);
 
   const executeData = await vxClient.getExecuteDataFromBatchCommands(
     event.args.destinationChain,
     batchedCommandId
   );
 
-  console.log('batch commands:', executeData);
+  logger.info('batch commands:', executeData);
 
   const tx = await evmClient.execute(executeData);
-  console.log('execute:', tx);
+  logger.info('execute:', tx);
 
   // update relay data
   await prisma.relayData.update({
@@ -136,7 +137,7 @@ export async function handleReceiveGMPApproveEvm(
   evmClient: EvmClient,
   event: EvmEvent<ContractCallApprovedWithMintEventObject>
 ) {
-  console.log('Received event execute:', event);
+  logger.info('Received event execute:', event);
   const {
     amount,
     commandId,
@@ -164,7 +165,7 @@ export async function handleReceiveGMPApproveEvm(
   });
 
   if (!data)
-    return console.log(
+    return logger.info(
       'cannot find payload from given payloadHash:',
       payloadHash
     );
@@ -181,7 +182,7 @@ export async function handleReceiveGMPApproveEvm(
     amount.toString()
   );
 
-  console.log('execute with token', tx);
+  logger.info('execute with token', tx);
 
   const executeWithTokenDb = await prisma.relayData.update({
     where: {
@@ -193,7 +194,7 @@ export async function handleReceiveGMPApproveEvm(
     },
   });
 
-  console.log('execute with token db', executeWithTokenDb);
+  logger.info('execute with token db', executeWithTokenDb);
 }
 
 export async function handleCompleteGMPCosmos(
@@ -219,7 +220,7 @@ export async function handleCompleteGMPCosmos(
         'ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5'
       )
       .then((balance) => {
-        console.log('Balance:', balance);
+        logger.info('Balance:', balance);
       });
   }
 }
