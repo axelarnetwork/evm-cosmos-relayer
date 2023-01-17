@@ -59,9 +59,8 @@ async function main() {
   listener.listenEVM(evmWithTokenObservable, evmApproveWithTokenObservable);
   vxClient.listenForCosmosGMP(cosmosWithTokenObservable);
   vxClient.listenForIBCComplete(cosmosCompleteObservable);
-
-  await initServer();
 }
 
 console.log('Starting relayer server...');
+initServer();
 main();

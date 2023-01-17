@@ -1,7 +1,9 @@
 import hapi, { Request } from '@hapi/hapi';
-import { prisma } from '..';
+import { env, prisma } from '..';
 import Joi from 'joi';
+import fetch from 'node-fetch';
 import { PaginationParams } from './types';
+import { PrismaClient } from '@prisma/client';
 
 export const initServer = async () => {
   const server = hapi.server({
@@ -91,6 +93,28 @@ export const initServer = async () => {
           page,
           total: data.length,
         },
+      };
+    },
+  });
+
+  // status endpoint
+  server.route({
+    method: 'GET',
+    path: '/status',
+    handler: async () => {
+      const hermesAlive = await fetch(env.HERMES_METRIC_URL)
+        .then((res) => res.ok)
+        .catch(() => false);
+
+      const dbAlive = await new PrismaClient()
+        .$connect()
+        .then(() => true)
+        .catch(() => false);
+
+      return {
+        relayer: true,
+        hermes: hermesAlive,
+        db: dbAlive,
       };
     },
   });

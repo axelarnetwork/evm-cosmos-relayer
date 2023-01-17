@@ -4,6 +4,7 @@ import {
   ContractCallWithTokenEventObject,
   EvmClient,
   config,
+  env,
   prisma,
 } from '..';
 import { EvmEvent, IBCEvent, IBCPacketEvent } from '../types';
@@ -211,7 +212,7 @@ export async function handleCompleteGMPCosmos(
     },
   });
 
-  if (process.env.DEV) {
+  if (env.DEV) {
     demoClient
       .getBalance(
         recipientAddress,
