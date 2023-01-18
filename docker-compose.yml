@@ -19,5 +19,4 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: relayer
     volumes:
-      # - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./.db:/var/lib/postgresql/data
