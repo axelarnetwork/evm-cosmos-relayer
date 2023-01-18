@@ -241,10 +241,10 @@ export async function handleEvmToCosmosCompleteEvent(
   }
 }
 
-export async function prepareHandler(label?: string, event: any) {
+export async function prepareHandler(event: any, label = '') {
   // reconnect prisma db
   await prisma.$connect();
 
   // log event
-  logger.info(`[${label || ''}] Received event ${JSON.stringify(event)}`);
+  logger.info(`[${label}] Received event ${JSON.stringify(event)}`);
 }

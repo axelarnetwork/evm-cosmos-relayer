@@ -43,25 +43,25 @@ async function main() {
       )
     )
     .subscribe((event) => {
-      prepareHandler('handleEvmToCosmosEvent', event)
+      prepareHandler(event, 'handleEvmToCosmosEvent')
         .then(() => handleEvmToCosmosEvent(vxClient, event))
         .catch((e) => handleAnyError('handleEvmToCosmosEvent', e));
     });
 
   evmApproveWithTokenObservable.subscribe((event) => {
-    prepareHandler('handleCosmosToEvmCompleteEvent', event)
+    prepareHandler(event, 'handleCosmosToEvmCompleteEvent')
       .then(() => handleCosmosToEvmCompleteEvent(evmClient, event))
       .catch((e) => handleAnyError('handleCosmosToEvmCompleteEvent', e));
   });
 
   cosmosWithTokenObservable.subscribe((event) => {
-    prepareHandler('handleCosmosToEvmEvent', event)
+    prepareHandler(event, 'handleCosmosToEvmEvent')
       .then(() => handleCosmosToEvmEvent(vxClient, evmClient, event))
       .catch((e) => handleAnyError('handleCosmosToEvmEvent', e));
   });
 
   cosmosCompleteObservable.subscribe((event) => {
-    prepareHandler('handleEvmToCosmosCompleteEvent', event)
+    prepareHandler(event, 'handleEvmToCosmosCompleteEvent')
       .then(() => handleEvmToCosmosCompleteEvent(demoClient, event))
       .catch((e) => handleAnyError('handleEvmToCosmosCompleteEvent', e));
   });
