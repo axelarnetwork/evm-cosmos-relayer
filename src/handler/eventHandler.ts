@@ -84,7 +84,7 @@ export async function handleCosmosToEvmEvent(
 ) {
   await prisma.relayData.create({
     data: {
-      id: `${event.hash}`,
+      id: `${event.hash}-0`,
       from: 'demo-chain',
       to: 'ganache-0',
       status: 0,
