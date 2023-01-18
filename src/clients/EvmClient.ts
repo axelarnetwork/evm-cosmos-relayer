@@ -34,9 +34,10 @@ export class EvmClient {
     return this.submitTx({
       to: this.gateway.address,
       data: executeData,
-    }).catch((e: any) =>
-      logger.error(`[EvmClient.execute] Failed ${JSON.stringify(e)}`)
-    );
+    }).catch((e: any) => {
+      logger.error(`[EvmClient.execute] Failed ${JSON.stringify(e)}`);
+      return undefined;
+    });
   }
 
   public executeWithToken(
@@ -62,9 +63,12 @@ export class EvmClient {
         amount
       )
       .then((tx) => this.submitTx(tx))
-      .catch((e: any) =>
-        logger.error(`[EvmClient.executeWithToken] Failed ${JSON.stringify(e)}`)
-      );
+      .catch((e: any) => {
+        logger.error(
+          `[EvmClient.executeWithToken] Failed ${JSON.stringify(e)}`
+        );
+        return undefined;
+      });
   }
 
   private submitTx(

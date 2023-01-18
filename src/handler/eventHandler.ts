@@ -126,6 +126,7 @@ export async function handleCosmosToEvmEvent(
   );
 
   const tx = await evmClient.execute(executeData);
+  if (!tx) return;
   logger.info(`[handleCosmosToEvmEvent] Execute: ${tx.transactionHash}`);
 
   // update relay data
