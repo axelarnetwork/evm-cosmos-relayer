@@ -41,18 +41,19 @@ export const initServer = async () => {
     path: '/tx.get',
     options: {
       description: 'Get a transaction by txHash and logIndex',
-      notes: 'Returns the transaction detail of given id',
+      notes:
+        'Returns the transaction detail of given txHash and logIndex. status:0 = pending, status:1 = approved, status:2 = completed, status:3 = failed',
       tags: ['api'],
       validate: {
         query: Joi.object({
           txHash: Joi.string()
             .required()
-            .description('the transaction hash of the source tx.'),
+            .description('A transaction hash of source tx.'),
           logIndex: Joi.number()
             .required()
             .default(0)
             .description(
-              'The log index of the CallContractWithToken event (from cosmos, the logIndex is 0)'
+              'A log index of the CallContractWithToken event (from cosmos, the logIndex is 0)'
             ),
         }),
       },
@@ -147,6 +148,12 @@ export const initServer = async () => {
   server.route({
     method: 'GET',
     path: '/status',
+    options: {
+      auth: false,
+      description: 'Returns an object with the status of each services',
+      notes: 'Check the status of dependant services (hermes, postgresdb, api)',
+      tags: ['api'],
+    },
     handler: async () => {
       const hermesAlive = await fetch(env.HERMES_METRIC_URL)
         .then((res) => res.ok)
