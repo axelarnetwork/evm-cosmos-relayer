@@ -6,7 +6,7 @@ A relayer between cosmos and evm chains on Axelar devnet.
 
 ### Prerequisite
 
-You have to run the hermes in your local machine.
+You have to run [hermes](https://github.com/informalsystems/hermes) in your local machine. See the config [here](https://github.com/axelarnetwork/evm-cosmos-gmp-sample/blob/main/devnet-vx/sample-hermes-config.toml)
 
 > TODO: we have to either add steps to run hermes, or deploy it on the server and remove prerequisite step here.
 
