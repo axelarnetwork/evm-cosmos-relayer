@@ -4,6 +4,12 @@ A relayer between cosmos and evm chains on Axelar devnet.
 
 ## How to run?
 
+### Prerequisite
+
+You have to run the hermes in your local machine.
+
+> TODO: we have to either add steps to run hermes, or deploy it on the server and remove prerequisite step here.
+
 The relayer is currently deployed on the heroku server, so you don't have to run it. But here's how you can also run it in your local machine.
 
 1. Copy `.env.example` to `.env` and fill all values.
