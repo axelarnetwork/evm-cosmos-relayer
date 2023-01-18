@@ -62,7 +62,7 @@ if (process.env.NODE_ENV !== 'production') {
       })
     );
 
-    logger.add(
+    apiLogger.add(
       new transports.Http({
         ...httpTransportOptions,
         format: apiFormat,
