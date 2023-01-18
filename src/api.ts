@@ -11,8 +11,8 @@ import HapiSwagger from 'hapi-swagger';
 
 export const initServer = async () => {
   const server = hapi.server({
-    port: 3000,
-    host: 'localhost',
+    port: env.PORT,
+    host: '0.0.0.0',
   });
 
   const swaggerOptions = {
