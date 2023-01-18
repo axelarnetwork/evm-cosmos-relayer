@@ -5,6 +5,9 @@ import fetch from 'node-fetch';
 import { PaginationParams } from './types';
 import { PrismaClient } from '@prisma/client';
 import { apiLogger } from './logger';
+import Inert from '@hapi/inert';
+import Vision from '@hapi/vision';
+import HapiSwagger from 'hapi-swagger';
 
 export const initServer = async () => {
   const server = hapi.server({
@@ -12,9 +15,49 @@ export const initServer = async () => {
     host: 'localhost',
   });
 
+  const swaggerOptions = {
+    info: {
+      title: 'CosmosGMP Relayer API Documentation',
+      version: '1.0.0',
+    },
+  };
+  const plugins: Array<hapi.ServerRegisterPluginObject<any>> = [
+    {
+      plugin: Inert,
+    },
+    {
+      plugin: Vision,
+    },
+    {
+      plugin: HapiSwagger,
+      options: swaggerOptions,
+    },
+  ];
+
+  await server.register(plugins);
+
   server.route({
     method: 'GET',
     path: '/tx.get',
+    options: {
+      description: 'Get a transaction by txHash and logIndex',
+      notes:
+        'Returns the transaction detail of given txHash and logIndex. status:0 = pending, status:1 = approved, status:2 = completed, status:3 = failed',
+      tags: ['api'],
+      validate: {
+        query: Joi.object({
+          txHash: Joi.string()
+            .required()
+            .description('A transaction hash of source tx.'),
+          logIndex: Joi.number()
+            .required()
+            .default(0)
+            .description(
+              'A log index of the CallContractWithToken event (from cosmos, the logIndex is 0)'
+            ),
+        }),
+      },
+    },
     handler: async (request) => {
       const { txHash, logIndex } = request.query;
       const data = await prisma.relayData.findFirst({
@@ -47,6 +90,9 @@ export const initServer = async () => {
     path: '/tx.all',
     options: {
       auth: false,
+      description: 'Get all transactions',
+      notes: 'Returns a paginated of transactions',
+      tags: ['api'],
       validate: {
         payload: Joi.object({
           page: Joi.number().integer().min(0).default(0),
@@ -56,7 +102,6 @@ export const initServer = async () => {
           },
           orderBy: Joi.object()
             .keys({
-              createdAt: Joi.string().valid('asc', 'desc').default('desc'),
               updatedAt: Joi.string().valid('asc', 'desc').default('desc'),
             })
             .default({
@@ -69,6 +114,7 @@ export const initServer = async () => {
     handler: async (request: Request) => {
       const payload = request.payload as PaginationParams;
       const { page, limit, orderBy, completed, include } = payload;
+      console.log(payload);
 
       const filtering = completed
         ? {
@@ -102,6 +148,12 @@ export const initServer = async () => {
   server.route({
     method: 'GET',
     path: '/status',
+    options: {
+      auth: false,
+      description: 'Returns an object with the status of each services',
+      notes: 'Check the status of dependant services (hermes, postgresdb, api)',
+      tags: ['api'],
+    },
     handler: async () => {
       const hermesAlive = await fetch(env.HERMES_METRIC_URL)
         .then((res) => res.ok)
