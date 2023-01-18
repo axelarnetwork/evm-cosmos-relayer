@@ -236,7 +236,7 @@ export async function handleEvmToCosmosCompleteEvent(
         'ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5'
       )
       .then((balance) => {
-        logger.info(`Balance:${balance}`);
+        logger.info(`Balance: ${JSON.stringify(balance)}`);
       });
   }
 }
