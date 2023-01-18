@@ -36,7 +36,11 @@ export class AxelarClient {
       chain,
       txHash
     );
-    return this.signingClient.broadcast(payload);
+    return this.signingClient.broadcast(payload).catch((e: any) => {
+      logger.error(
+        `[AxelarClient.confirmEvmTx] Failed to broadcast ${JSON.stringify(e)}`
+      );
+    });
   }
 
   public getPendingCommands(chain: string) {
@@ -52,7 +56,11 @@ export class AxelarClient {
       this.signingClient.getAddress(),
       chain
     );
-    return this.signingClient.broadcast(payload);
+    return this.signingClient.broadcast(payload).catch((e: any) => {
+      logger.error(
+        `[AxelarClient.signCommands] Failed to broadcast ${JSON.stringify(e)}`
+      );
+    });
   }
 
   public async getExecuteDataFromBatchCommands(chain: string, id: string) {
@@ -86,7 +94,13 @@ export class AxelarClient {
       logIndex,
       payload
     );
-    return this.signingClient.broadcast(_payload);
+    return this.signingClient.broadcast(_payload).catch((e: any) => {
+      logger.error(
+        `[AxelarClient.executeGeneralMessageWithToken] Failed to broadcast ${JSON.stringify(
+          e
+        )}`
+      );
+    });
   }
 
   public setFee(fee: StdFee) {

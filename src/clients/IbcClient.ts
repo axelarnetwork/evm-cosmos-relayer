@@ -47,6 +47,10 @@ export class IbcClient {
       Metadata.encode(metadata).finish()
     );
 
-    return this.signingClient.broadcast(payload);
+    return this.signingClient.broadcast(payload).catch((e: any) => {
+      logger.error(
+        `[IbcClient.sendGMPIbc] Failed to broadcast ${JSON.stringify(e)}`
+      );
+    });
   }
 }
