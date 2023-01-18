@@ -108,21 +108,6 @@ export class AxelarClient {
     return !!event?.event?.contractCallWithToken;
   }
 
-  public async pollEvent(
-    chain: string,
-    eventId: string,
-    pollingInterval = 1000
-  ) {
-    let attempt = 0;
-
-    while (attempt < 3) {
-      const event = await this.getEvent(chain, eventId).catch(() => undefined);
-      logger.info(event);
-      await sleep(pollingInterval);
-      attempt++;
-    }
-  }
-
   public async pollUntilContractCallWithTokenConfirmed(
     chain: string,
     eventId: string,
@@ -171,12 +156,9 @@ export class AxelarClient {
 
       // check if the event topic is matched
       if (!event.result || event.result.query !== topic) return;
-      // logger.info('log event', JSON.stringify(event));
 
       // parse the event data
       const data = parseGMPEvent(event.result.events);
-
-      logger.info(data);
 
       subject.next(data);
     });
