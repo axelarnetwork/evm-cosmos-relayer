@@ -6,10 +6,10 @@ import { ContractCallWithTokenEventObject } from './types/contracts/IAxelarGatew
 import { ContractCallApprovedWithMintEventObject } from './types/contracts/IAxelarGateway';
 import {
   handleAnyError,
-  handleCompleteGMPCosmos,
-  handleReceiveGMPApproveEvm,
-  handleReceiveGMPCosmos,
-  handleReceiveGMPEvm,
+  handleEvmToCosmosCompleteEvent,
+  handleCosmosToEvmCompleteEvent,
+  handleCosmosToEvmEvent,
+  handleEvmToCosmosEvent,
   prepareHandler,
 } from './handler';
 import { initServer } from './api';
@@ -43,27 +43,27 @@ async function main() {
       )
     )
     .subscribe((event) => {
-      prepareHandler()
-        .then(() => handleReceiveGMPEvm(vxClient, event))
-        .catch((e) => handleAnyError('handleReceiveGMPEvm', e));
+      prepareHandler('handleEvmToCosmosEvent', event)
+        .then(() => handleEvmToCosmosEvent(vxClient, event))
+        .catch((e) => handleAnyError('handleEvmToCosmosEvent', e));
     });
 
   evmApproveWithTokenObservable.subscribe((event) => {
-    prepareHandler()
-      .then(() => handleReceiveGMPApproveEvm(evmClient, event))
-      .catch((e) => handleAnyError('handleReceiveGMPApproveEvm', e));
+    prepareHandler('handleCosmosToEvmCompleteEvent', event)
+      .then(() => handleCosmosToEvmCompleteEvent(evmClient, event))
+      .catch((e) => handleAnyError('handleCosmosToEvmCompleteEvent', e));
   });
 
   cosmosWithTokenObservable.subscribe((event) => {
-    prepareHandler()
-      .then(() => handleReceiveGMPCosmos(vxClient, evmClient, event))
-      .catch((e) => handleAnyError('handleReceiveGMPCosmos', e));
+    prepareHandler('handleCosmosToEvmEvent', event)
+      .then(() => handleCosmosToEvmEvent(vxClient, evmClient, event))
+      .catch((e) => handleAnyError('handleCosmosToEvmEvent', e));
   });
 
   cosmosCompleteObservable.subscribe((event) => {
-    prepareHandler()
-      .then(() => handleCompleteGMPCosmos(demoClient, event))
-      .catch((e) => handleAnyError('handleCompleteGMPCosmos', e));
+    prepareHandler('handleEvmToCosmosCompleteEvent', event)
+      .then(() => handleEvmToCosmosCompleteEvent(demoClient, event))
+      .catch((e) => handleAnyError('handleEvmToCosmosCompleteEvent', e));
   });
 
   // ########## Listens for events ##########

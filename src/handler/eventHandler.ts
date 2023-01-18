@@ -14,11 +14,10 @@ import {
   getPacketSequenceFromExecuteTx,
 } from '../utils/parseUtils';
 
-export async function handleReceiveGMPEvm(
+export async function handleEvmToCosmosEvent(
   vxClient: AxelarClient,
   event: EvmEvent<ContractCallWithTokenEventObject>
 ) {
-  logger.info(`Received event ${JSON.stringify(event)}`);
   const id = `${event.hash}-${event.logIndex}`;
   await prisma.relayData.create({
     data: {
@@ -43,7 +42,9 @@ export async function handleReceiveGMPEvm(
     config.evm['ganache-0'].name,
     event.hash
   );
-  logger.info(`Confirmed: ${confirmTx.transactionHash}`);
+  logger.info(
+    `[handleEvmToCosmosEvent] Confirmed: ${confirmTx.transactionHash}`
+  );
   await vxClient.pollUntilContractCallWithTokenConfirmed(
     config.evm['ganache-0'].name,
     `${event.hash}-${event.logIndex}`
@@ -56,7 +57,9 @@ export async function handleReceiveGMPEvm(
     event.hash,
     event.args.payload
   );
-  logger.info(`Executed: ${executeTx.transactionHash}`);
+  logger.info(
+    `[handleEvmToCosmosEvent] Executed: ${executeTx.transactionHash}`
+  );
   const packetSequence = getPacketSequenceFromExecuteTx(executeTx);
 
   // save data to db.
@@ -69,18 +72,16 @@ export async function handleReceiveGMPEvm(
       packetSequence,
     },
   });
-  logger.info(`Updated to db: ${JSON.stringify(updatedData)}`);
+  logger.info(
+    `[handleEvmToCosmosEvent] DB Updated: ${JSON.stringify(updatedData)}`
+  );
 }
 
-export async function handleReceiveGMPCosmos(
+export async function handleCosmosToEvmEvent(
   vxClient: AxelarClient,
   evmClient: EvmClient,
   event: IBCEvent<ContractCallWithTokenEventObject>
 ) {
-  // save something to the db.
-  // - can we get the txhash from the event?
-  // - get the payload hash from the event
-  // - get the payload from the event
   await prisma.relayData.create({
     data: {
       id: `${event.hash}`,
@@ -104,25 +105,31 @@ export async function handleReceiveGMPCosmos(
     event.args.destinationChain
   );
 
-  logger.info(`pending commands: ${JSON.stringify(pendingCommands)}`);
+  logger.info(
+    `[handleCosmosToEvmEvent]: PendingCommands: ${JSON.stringify(
+      pendingCommands
+    )}`
+  );
   if (pendingCommands.length === 0) return;
 
   const signCommand = await vxClient.signCommands(event.args.destinationChain);
   const batchedCommandId = getBatchCommandIdFromSignTx(signCommand);
-  logger.info(`batched command id: ${batchedCommandId}`);
+  logger.info(`[handleCosmosToEvmEvent] BatchCommandId: ${batchedCommandId}`);
 
   const executeData = await vxClient.getExecuteDataFromBatchCommands(
     event.args.destinationChain,
     batchedCommandId
   );
 
-  logger.info(`Batch commands: ${JSON.stringify(executeData)}`);
+  logger.info(
+    `[handleCosmosToEvmEvent] BatchCommands: ${JSON.stringify(executeData)}`
+  );
 
   const tx = await evmClient.execute(executeData);
-  logger.info(`Execute: ${tx.transactionHash}`);
+  logger.info(`[handleCosmosToEvmEvent] Execute: ${tx.transactionHash}`);
 
   // update relay data
-  await prisma.relayData.update({
+  const record = await prisma.relayData.update({
     where: {
       id: `${event.hash}`,
     },
@@ -131,15 +138,14 @@ export async function handleReceiveGMPCosmos(
       status: 1,
     },
   });
+
+  logger.info(`[handleCosmosToEvmEvent] Update DB: ${JSON.stringify(record)}`);
 }
 
-export async function handleReceiveGMPApproveEvm(
+export async function handleCosmosToEvmCompleteEvent(
   evmClient: EvmClient,
   event: EvmEvent<ContractCallApprovedWithMintEventObject>
 ) {
-  logger.info(
-    `Received event handleReceiveGMPApproveEvm: ${JSON.stringify(event)}}`
-  );
   const {
     amount,
     commandId,
@@ -168,7 +174,7 @@ export async function handleReceiveGMPApproveEvm(
 
   if (!data)
     return logger.info(
-      `Cannot find payload from given payloadHash: ${payloadHash}`
+      `[handleCosmosToEvmCompleteEvent]: Cannot find payload from given payloadHash: ${payloadHash}`
     );
 
   const { payload, id } = data;
@@ -183,7 +189,9 @@ export async function handleReceiveGMPApproveEvm(
     amount.toString()
   );
 
-  logger.info('execute with token', tx);
+  logger.info(
+    `[handleCosmosToEvmCompleteEvent] executeWithToken: ${JSON.stringify(tx)}`
+  );
 
   const executeWithTokenDb = await prisma.relayData.update({
     where: {
@@ -195,15 +203,18 @@ export async function handleReceiveGMPApproveEvm(
     },
   });
 
-  logger.info(`execute with token db ${JSON.stringify(executeWithTokenDb)}`);
+  logger.info(
+    `[handleCosmosToEvmCompleteEvent] Update DB: ${JSON.stringify(
+      executeWithTokenDb
+    )}`
+  );
 }
 
-export async function handleCompleteGMPCosmos(
+export async function handleEvmToCosmosCompleteEvent(
   demoClient: AxelarClient,
   event: IBCPacketEvent
 ) {
-  const recipientAddress = 'axelar199km5vjuu6edyjlwx62wvmr6uqeghyz4rwmyvk';
-  await prisma.relayData.update({
+  const record = await prisma.relayData.update({
     where: {
       packetSequence: event.sequence,
     },
@@ -213,8 +224,12 @@ export async function handleCompleteGMPCosmos(
       updatedAt: new Date(),
     },
   });
+  logger.info(
+    `[handleEvmToCosmosCompleteEvent] Update DB: ${JSON.stringify(record)}`
+  );
 
   if (env.DEV) {
+    const recipientAddress = 'axelar199km5vjuu6edyjlwx62wvmr6uqeghyz4rwmyvk';
     demoClient
       .getBalance(
         recipientAddress,
@@ -226,7 +241,10 @@ export async function handleCompleteGMPCosmos(
   }
 }
 
-export async function prepareHandler() {
+export async function prepareHandler(label?: string, event: any) {
   // reconnect prisma db
   await prisma.$connect();
+
+  // log event
+  logger.info(`[${label || ''}] Received event ${JSON.stringify(event)}`);
 }
