@@ -12,6 +12,7 @@ import { EvmEvent } from '../types';
 import { filterEventArgs } from '../utils/filterUtils';
 import { ContractCallWithTokenEventObject } from '.';
 import { ContractCallApprovedWithMintEventObject } from '../types/contracts/IAxelarGatewayAbi';
+import { logger } from '../logger';
 
 export class GMPListenerClient {
   gatewayContract: IAxelarGateway;
@@ -36,7 +37,7 @@ export class GMPListenerClient {
     );
     // const events = await this.gatewayContract.queryFilter(filter, 0, "latest");
     // events.forEach((event) => {
-    //   console.log(event.args.destinationChain);
+    //   logger.info(event.args.destinationChain);
     // });
 
     this.gatewayContract.on(filter, (...args) => {
@@ -70,9 +71,7 @@ export class GMPListenerClient {
   }
 
   public async listenEVM(
-    evmWithTokenObservable: Subject<
-      EvmEvent<ContractCallWithTokenEventObject>
-    >,
+    evmWithTokenObservable: Subject<EvmEvent<ContractCallWithTokenEventObject>>,
     evmApproveWithTokenObservable: Subject<
       EvmEvent<ContractCallApprovedWithMintEventObject>
     >
@@ -82,14 +81,12 @@ export class GMPListenerClient {
 
     // update block number
     this.currentBlock = await this.gatewayContract.provider.getBlockNumber();
-    console.log('Current block number:', this.currentBlock);
+    logger.info(`Current block number: ${this.currentBlock}`);
 
     // listen for gmp event that originates from the evm chain.
     this.listenCallContractWithToken(evmWithTokenObservable);
 
     // listen for the gmp approve event at the evm chain where it is sent from cosmos.
-    this.listenCallContractWithTokenApprove(
-      evmApproveWithTokenObservable
-    );
+    this.listenCallContractWithTokenApprove(evmApproveWithTokenObservable);
   }
 }

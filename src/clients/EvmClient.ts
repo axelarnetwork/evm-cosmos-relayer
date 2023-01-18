@@ -8,6 +8,7 @@ import {
 } from '../types/contracts';
 import { env } from '..';
 import { sleep } from '../utils/utils';
+import { logger } from '../logger';
 
 export class EvmClient {
   private wallet: Wallet;
@@ -72,7 +73,7 @@ export class EvmClient {
       .then((t) => t.wait())
       .catch(async () => {
         await sleep(this.retryDelay);
-        console.log(`Retrying tx: ${retryAttempt}`);
+        logger.info(`Retrying tx: ${retryAttempt}`);
         return this.submitTx(tx, retryAttempt + 1);
       });
   }
