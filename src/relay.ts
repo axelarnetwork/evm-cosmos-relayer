@@ -2,8 +2,10 @@ import { GMPListenerClient, AxelarClient, EvmClient } from './clients';
 import { config } from './config';
 import { Subject, filter } from 'rxjs';
 import { EvmEvent, IBCEvent, IBCPacketEvent } from './types';
-import { ContractCallWithTokenEventObject } from './types/contracts/IAxelarGatewayAbi';
-import { ContractCallApprovedWithMintEventObject } from './types/contracts/IAxelarGateway';
+import {
+  ContractCallApprovedWithMintEventObject,
+  ContractCallWithTokenEventObject,
+} from './types/contracts/IAxelarGateway';
 import {
   handleAnyError,
   handleEvmToCosmosCompleteEvent,

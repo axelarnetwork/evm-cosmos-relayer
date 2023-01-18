@@ -11,7 +11,7 @@ export {
 import { EvmEvent } from '../types';
 import { filterEventArgs } from '../utils/filterUtils';
 import { ContractCallWithTokenEventObject } from '.';
-import { ContractCallApprovedWithMintEventObject } from '../types/contracts/IAxelarGatewayAbi';
+import { ContractCallApprovedWithMintEventObject } from '../types/contracts/IAxelarGateway';
 import { logger } from '../logger';
 
 export class GMPListenerClient {
