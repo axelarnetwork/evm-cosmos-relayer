@@ -13,7 +13,7 @@ export const env = {
     process.env.DATABASE_URL ||
     'postgresql://postgres:postgres@localhost:5432/relayer',
   PORT: process.env.PORT || 3000,
-  DD_API_KEY: process.env.DATADOG_API_KEY || '',
+  DD_API_KEY: process.env.DD_API_KEY || '',
 };
 
 const demo: CosmosNetworkConfig = {
