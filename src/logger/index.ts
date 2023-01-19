@@ -29,17 +29,6 @@ export const apiLogger = createLogger({
 
 logger.info(`Production: ${process.env.NODE_ENV}`);
 
-logger.add(
-  new transports.Console({
-    format: combine(label({ label: 'relayer' }), ...baseFormats, myFormat),
-  })
-);
-apiLogger.add(
-  new transports.Console({
-    format: combine(label({ label: 'api' }), ...baseFormats, myFormat),
-  })
-);
-
 if (process.env.NODE_ENV === 'production') {
   if (!env.DD_API_KEY) {
     logger.info('DD_API_KEY is not set, skipping datadog logger setup');
@@ -66,4 +55,15 @@ if (process.env.NODE_ENV === 'production') {
       })
     );
   }
+} else {
+  logger.add(
+    new transports.Console({
+      format: combine(label({ label: 'relayer' }), ...baseFormats, myFormat),
+    })
+  );
+  apiLogger.add(
+    new transports.Console({
+      format: combine(label({ label: 'api' }), ...baseFormats, myFormat),
+    })
+  );
 }
