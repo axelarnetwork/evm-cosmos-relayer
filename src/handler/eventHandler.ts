@@ -106,7 +106,7 @@ export async function handleCosmosToEvmEvent(
   );
 
   logger.info(
-    `[handleCosmosToEvmEvent]: PendingCommands: ${JSON.stringify(
+    `[handleCosmosToEvmEvent] PendingCommands: ${JSON.stringify(
       pendingCommands
     )}`
   );
@@ -140,7 +140,7 @@ export async function handleCosmosToEvmEvent(
     },
   });
 
-  logger.info(`[handleCosmosToEvmEvent] Update DB: ${JSON.stringify(record)}`);
+  logger.info(`[handleCosmosToEvmEvent] DBUpdate: ${JSON.stringify(record)}`);
 }
 
 export async function handleCosmosToEvmCompleteEvent(
@@ -205,7 +205,7 @@ export async function handleCosmosToEvmCompleteEvent(
   });
 
   logger.info(
-    `[handleCosmosToEvmCompleteEvent] Update DB: ${JSON.stringify(
+    `[handleCosmosToEvmCompleteEvent] DBUpdate: ${JSON.stringify(
       executeWithTokenDb
     )}`
   );
@@ -226,7 +226,7 @@ export async function handleEvmToCosmosCompleteEvent(
     },
   });
   logger.info(
-    `[handleEvmToCosmosCompleteEvent] Update DB: ${JSON.stringify(record)}`
+    `[handleEvmToCosmosCompleteEvent] DBUpdate: ${JSON.stringify(record)}`
   );
 
   if (env.DEV) {
@@ -247,5 +247,5 @@ export async function prepareHandler(event: any, label = '') {
   await prisma.$connect();
 
   // log event
-  logger.info(`[${label}] Received event ${JSON.stringify(event)}`);
+  logger.info(`[${label}] EventReceived ${JSON.stringify(event)}`);
 }
