@@ -114,7 +114,6 @@ export const initServer = async () => {
     handler: async (request: Request) => {
       const payload = request.payload as PaginationParams;
       const { page, limit, orderBy, completed, include } = payload;
-      console.log(payload);
 
       const filtering = completed
         ? {
