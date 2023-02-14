@@ -10,7 +10,7 @@ import {
 // import {} from "@axelar-network/axelarjs-types/axelar/evm/v1beta1/event";
 import { Height } from 'cosmjs-types/ibc/core/client/v1/client';
 import {
-  ExecuteGeneralMessageWithTokenRequest,
+  ExecuteMessageRequest,
   protobufPackage as AxelarProtobufPackage,
 } from '@axelar-network/axelarjs-types/axelar/axelarnet/v1beta1/tx';
 import { toAccAddress } from '@cosmjs/stargate/build/queryclient/utils';
@@ -18,7 +18,7 @@ import { fromHex } from '@cosmjs/encoding';
 import { utils } from 'ethers';
 import { Coin } from '@cosmjs/stargate';
 import Long from 'long';
-import { logger } from '../logger';
+// import { logger } from '../logger';
 
 /**
  * Get payload for confirm gateway tx on evm chain
@@ -46,7 +46,6 @@ export function getConfirmGatewayTxPayload(
 
 export function getExecuteGeneralMessageWithTokenPayload(
   sender: string,
-  destinationChain: string,
   txHash: string,
   logIndex: number,
   payload: string
@@ -54,9 +53,8 @@ export function getExecuteGeneralMessageWithTokenPayload(
   return [
     {
       typeUrl: `/${AxelarProtobufPackage}.ExecuteGeneralMessageWithTokenRequest`,
-      value: ExecuteGeneralMessageWithTokenRequest.fromPartial({
+      value: ExecuteMessageRequest.fromPartial({
         sender: toAccAddress(sender),
-        chain: destinationChain,
         payload: fromHex(payload.slice(2)),
         id: `${txHash}-${logIndex}`,
       }),

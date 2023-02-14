@@ -52,7 +52,6 @@ export async function handleEvmToCosmosEvent(
 
   // Sent an execute tx to devnet-vx
   const executeTx = await vxClient.executeGeneralMessageWithToken(
-    event.args.destinationChain,
     event.logIndex,
     event.hash,
     event.args.payload

@@ -82,14 +82,12 @@ export class AxelarClient {
   }
 
   public async executeGeneralMessageWithToken(
-    destChain: string,
     logIndex: number,
     txHash: string,
     payload: string
   ) {
     const _payload = getExecuteGeneralMessageWithTokenPayload(
       this.signingClient.getAddress(),
-      destChain,
       txHash,
       logIndex,
       payload
