@@ -46,7 +46,6 @@ export function getConfirmGatewayTxPayload(
 
 export function getExecuteGeneralMessageWithTokenPayload(
   sender: string,
-  destinationChain: string,
   txHash: string,
   logIndex: number,
   payload: string
