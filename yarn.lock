@@ -56,13 +56,13 @@
     fs-extra "^10.1.0"
     ganache "^7.3.2"
 
-"@axelar-network/axelarjs-sdk@0.12.0-alpha.17":
-  version "0.12.0-alpha.17"
-  resolved "https://registry.yarnpkg.com/@axelar-network/axelarjs-sdk/-/axelarjs-sdk-0.12.0-alpha.17.tgz#016786f7283bcdc32e7dfb3e5df4075963c5240d"
-  integrity sha512-J4LHXe8k8lhNr3VgphBWuk2tRL5O7+X4IfzOxMxoQ1FxCOmgQ8hhkpdrKCeLDBOpXJBG6U2oGoV/38xwsfahiQ==
+"@axelar-network/axelarjs-sdk@^0.12.0-alpha.18":
+  version "0.12.0-alpha.18"
+  resolved "https://registry.yarnpkg.com/@axelar-network/axelarjs-sdk/-/axelarjs-sdk-0.12.0-alpha.18.tgz#c8c6ef5939ed83cda0b682ea8fa6d26ddf5f075f"
+  integrity sha512-mr5XFQjsKFLkttceobT+YFEv7oxAZVCxMTlqCq7Prmtre4ucB0ZZYREonzO9pgiMGubel5mlSrSCHzZ5J8/w/g==
   dependencies:
     "@axelar-network/axelar-cgp-solidity" "^4.3.0"
-    "@axelar-network/axelarjs-types" "^0.28.0-alpha.5"
+    "@axelar-network/axelarjs-types" "^0.28.0-alpha.6"
     "@cosmjs/stargate" "^0.28.4"
     "@types/uuid" "^8.3.1"
     bech32 "^2.0.0"
@@ -74,10 +74,10 @@
     string-similarity-js "^2.1.4"
     uuid "^8.3.2"
 
-"@axelar-network/axelarjs-types@^0.28.0-alpha.5":
-  version "0.28.0-alpha.5"
-  resolved "https://registry.yarnpkg.com/@axelar-network/axelarjs-types/-/axelarjs-types-0.28.0-alpha.5.tgz#38cab85c3ed0b5ea386aefb229b7adb0765b6bf3"
-  integrity sha512-Y3hFnE4kOcYSI+mrvhORa4sKG2SiqKej4FgNsbgVlwwvIwq9C+wM5TKtmU0Dq7Jz9EKcs5u3YYt0SAfEcHIK/g==
+"@axelar-network/axelarjs-types@^0.28.0-alpha.6":
+  version "0.28.0-alpha.6"
+  resolved "https://registry.yarnpkg.com/@axelar-network/axelarjs-types/-/axelarjs-types-0.28.0-alpha.6.tgz#9506c21e04e0d2f9c0bb6c86a3c8464ca629005d"
+  integrity sha512-2ZylrvfOWSLx+0/cFbhGmuy9MHtB1PWEzQ1AU6PKVuatbZH+biDf/NfWVYnYgtQcsyO8QHc6s++RxIuBrOF5YQ==
   dependencies:
     long "^4.0.0"
     protobufjs "~6.11.2"
