@@ -52,7 +52,7 @@ export function getExecuteGeneralMessageWithTokenPayload(
 ) {
   return [
     {
-      typeUrl: `/${AxelarProtobufPackage}.ExecuteGeneralMessageWithTokenRequest`,
+      typeUrl: `/${AxelarProtobufPackage}.ExecuteMessageRequest`,
       value: ExecuteMessageRequest.fromPartial({
         sender: toAccAddress(sender),
         payload: fromHex(payload.slice(2)),
