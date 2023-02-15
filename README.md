@@ -8,9 +8,7 @@ The relayer is currently deployed on the heroku server, so you don't have to run
 
 ### Prerequisite
 
-1. You have to run [hermes](https://github.com/informalsystems/hermes) in your local machine. See the config [here](https://github.com/axelarnetwork/evm-cosmos-gmp-sample/blob/main/devnet-vx/sample-hermes-config.toml)
-
-2. Make sure docker engine is running. We use docker for spin up local postgres db.
+Make sure docker engine is running. We use docker for spin up local postgres db.
 
 ### Steps
 
