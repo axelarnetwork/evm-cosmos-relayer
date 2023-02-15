@@ -19,11 +19,12 @@ import { logger } from './logger';
 
 async function main() {
   const evm = config.evm['ganache-0'];
-  const observedDestinationChains = [config.cosmos.demo.chainId];
+  const observedDestinationChains = [config.cosmos.demo.chainId, config.cosmos.osmosis.chainId];
   const listener = new GMPListenerClient(evm.rpcUrl, evm.gateway);
   const evmClient = new EvmClient(evm);
   const vxClient = await AxelarClient.init(config.cosmos.devnet);
   const demoClient = await AxelarClient.init(config.cosmos.demo);
+  const osmoClient = await AxelarClient.init(config.cosmos.osmosis);
 
   // Create an event subject for ContractCallWithTokenListenerEvent
   const evmWithTokenObservable = new Subject<
@@ -65,6 +66,12 @@ async function main() {
   cosmosCompleteObservable.subscribe((event) => {
     prepareHandler(event, 'handleEvmToCosmosCompleteEvent')
       .then(() => handleEvmToCosmosCompleteEvent(demoClient, event))
+      .catch((e) => handleAnyError('handleEvmToCosmosCompleteEvent', e));
+  });
+
+  cosmosCompleteObservable.subscribe((event) => {
+    prepareHandler(event, 'handleEvmToCosmosCompleteEvent')
+      .then(() => handleEvmToCosmosCompleteEvent(osmoClient, event))
       .catch((e) => handleAnyError('handleEvmToCosmosCompleteEvent', e));
   });
 
