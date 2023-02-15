@@ -38,6 +38,17 @@ const devnet: CosmosNetworkConfig = {
   ws: 'ws://afc5d4a439e4a456bafe34c2d9cd955b-182827533.us-east-2.elb.amazonaws.com:26657/websocket',
 };
 
+const osmosis: CosmosNetworkConfig = {
+  mnemonic: env.AXELAR_MNEMONIC,
+  chainId: 'osmosis',
+  denom: 'uosmo',
+  rpcUrl:
+    'https://rpc.testnet.osmosis.zone:443',
+  lcdUrl:
+    'https://lcd-test.osmosis.zone',
+  ws: 'wss://rpc.testnet.osmosis.zone/websocket',
+};
+
 const ganache0: EvmNetworkConfig = {
   name: 'ganache-0',
   privateKey: env.EVM_PRIVATE_KEY,
@@ -50,6 +61,7 @@ export const config = {
   cosmos: {
     demo,
     devnet,
+    osmosis,
   },
   evm: {
     'ganache-0': ganache0,
