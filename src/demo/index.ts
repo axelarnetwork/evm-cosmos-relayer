@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 import { IbcClient, SigningClient, config, env } from '..';
 
 async function main() {
-  const signingClient = await SigningClient.init(config.cosmos.demo);
+  const signingClient = await SigningClient.init(config.cosmos.osmosis);
 
   const wallet = new ethers.Wallet(env.EVM_PRIVATE_KEY);
   const client = new IbcClient(signingClient);

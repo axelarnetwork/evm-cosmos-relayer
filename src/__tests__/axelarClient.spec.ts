@@ -8,11 +8,11 @@ describe('AxelarClient', () => {
   });
 
   it('should be able to query balance from demo chain', async () => {
-    const demoClient = await AxelarClient.init(config.cosmos.demo);
+    const client = await AxelarClient.init(config.cosmos.osmosis);
     const denom =
       'ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5';
     const address = 'axelar199km5vjuu6edyjlwx62wvmr6uqeghyz4rwmyvk';
-    const balance = await demoClient.getBalance(address, denom);
+    const balance = await client.getBalance(address, denom);
     console.log(balance);
     expect(balance).toEqual({
       denom: denom,

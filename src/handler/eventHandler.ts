@@ -23,7 +23,7 @@ export async function handleEvmToCosmosEvent(
     data: {
       id,
       from: 'goerli',
-      to: 'demo-chain',
+      to: event.args.destinationChain,
       callContractWithToken: {
         create: {
           payload: event.args.payload,
@@ -84,7 +84,7 @@ export async function handleCosmosToEvmEvent(
   await prisma.relayData.create({
     data: {
       id: `${event.hash}-0`,
-      from: 'demo-chain',
+      from: 'osmosis-5',
       to: 'goerli',
       status: 0,
       callContractWithToken: {
@@ -211,7 +211,7 @@ export async function handleCosmosToEvmCompleteEvent(
 }
 
 export async function handleEvmToCosmosCompleteEvent(
-  demoClient: AxelarClient,
+  client: AxelarClient,
   event: IBCPacketEvent
 ) {
   const record = await prisma.relayData.update({
@@ -230,7 +230,7 @@ export async function handleEvmToCosmosCompleteEvent(
 
   if (env.DEV) {
     const recipientAddress = 'axelar199km5vjuu6edyjlwx62wvmr6uqeghyz4rwmyvk';
-    demoClient
+    client
       .getBalance(
         recipientAddress,
         'ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5'

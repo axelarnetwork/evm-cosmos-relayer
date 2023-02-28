@@ -17,7 +17,6 @@ import { logger } from '../logger';
 export class GMPListenerClient {
   gatewayContract: IAxelarGateway;
   private currentBlock = 0;
-  private targetChains = ['demo-chain'];
 
   constructor(rpcUrl: string, gateway: string) {
     const provider = new ethers.providers.JsonRpcProvider(rpcUrl);

@@ -33,7 +33,7 @@ export class IbcClient {
 
     const metadata = Metadata.fromPartial({
       sender: sender,
-      sourceChain: 'demo-chain',
+      sourceChain: 'osmosis-5',
       destChain: destChain,
       destAddress: destAddress,
       payload: _payload,
