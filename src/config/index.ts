@@ -16,17 +16,6 @@ export const env = {
   DD_API_KEY: process.env.DD_API_KEY || '',
 };
 
-// const demo: CosmosNetworkConfig = {
-//   mnemonic: env.AXELAR_MNEMONIC,
-//   chainId: 'demo-chain',
-//   denom: 'udemo',
-//   rpcUrl:
-//     'http://a1b287720a05545eb8e2f6c769a1af6b-1437958231.us-east-2.elb.amazonaws.com:26657',
-//   lcdUrl:
-//     'http://a1b287720a05545eb8e2f6c769a1af6b-1437958231.us-east-2.elb.amazonaws.com:1317',
-//   ws: 'ws://a1b287720a05545eb8e2f6c769a1af6b-1437958231.us-east-2.elb.amazonaws.com:26657/websocket',
-// };
-
 const axelarTestnet: CosmosNetworkConfig = {
   mnemonic: env.AXELAR_MNEMONIC,
   chainId: 'axelar-testnet',
