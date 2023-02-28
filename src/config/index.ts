@@ -16,54 +16,48 @@ export const env = {
   DD_API_KEY: process.env.DD_API_KEY || '',
 };
 
-const demo: CosmosNetworkConfig = {
-  mnemonic: env.AXELAR_MNEMONIC,
-  chainId: 'demo-chain',
-  denom: 'udemo',
-  rpcUrl:
-    'http://a1b287720a05545eb8e2f6c769a1af6b-1437958231.us-east-2.elb.amazonaws.com:26657',
-  lcdUrl:
-    'http://a1b287720a05545eb8e2f6c769a1af6b-1437958231.us-east-2.elb.amazonaws.com:1317',
-  ws: 'ws://a1b287720a05545eb8e2f6c769a1af6b-1437958231.us-east-2.elb.amazonaws.com:26657/websocket',
-};
+// const demo: CosmosNetworkConfig = {
+//   mnemonic: env.AXELAR_MNEMONIC,
+//   chainId: 'demo-chain',
+//   denom: 'udemo',
+//   rpcUrl:
+//     'http://a1b287720a05545eb8e2f6c769a1af6b-1437958231.us-east-2.elb.amazonaws.com:26657',
+//   lcdUrl:
+//     'http://a1b287720a05545eb8e2f6c769a1af6b-1437958231.us-east-2.elb.amazonaws.com:1317',
+//   ws: 'ws://a1b287720a05545eb8e2f6c769a1af6b-1437958231.us-east-2.elb.amazonaws.com:26657/websocket',
+// };
 
-const devnet: CosmosNetworkConfig = {
+const axelarTestnet: CosmosNetworkConfig = {
   mnemonic: env.AXELAR_MNEMONIC,
-  chainId: 'devnet-wk',
-  denom: 'uwk',
-  rpcUrl:
-    'http://afc5d4a439e4a456bafe34c2d9cd955b-182827533.us-east-2.elb.amazonaws.com:26657',
-  lcdUrl:
-    'http://afc5d4a439e4a456bafe34c2d9cd955b-182827533.us-east-2.elb.amazonaws.com:1317',
-  ws: 'ws://afc5d4a439e4a456bafe34c2d9cd955b-182827533.us-east-2.elb.amazonaws.com:26657/websocket',
+  chainId: 'axelar-testnet',
+  denom: 'uaxl',
+  rpcUrl: 'https://rpc-axelar-testnet.imperator.co:443',
+  lcdUrl: 'https://lcd-axelar-testnet.imperator.co',
+  ws: 'ws://rpc-axelar-testnet.imperator.co/wss',
 };
 
 const osmosis: CosmosNetworkConfig = {
   mnemonic: env.AXELAR_MNEMONIC,
   chainId: 'osmosis',
   denom: 'uosmo',
-  rpcUrl:
-    'https://rpc.testnet.osmosis.zone:443',
-  lcdUrl:
-    'https://lcd-test.osmosis.zone',
+  rpcUrl: 'https://rpc.testnet.osmosis.zone:443',
+  lcdUrl: 'https://lcd-test.osmosis.zone',
   ws: 'wss://rpc.testnet.osmosis.zone/websocket',
 };
 
-const ganache0: EvmNetworkConfig = {
-  name: 'ganache-0',
+const goerli: EvmNetworkConfig = {
+  name: 'goerli',
   privateKey: env.EVM_PRIVATE_KEY,
-  rpcUrl:
-    'http://a5c6803b39cd942c3b9daee2847e24fa-1977123350.us-east-2.elb.amazonaws.com:7545',
-  gateway: '0xE720c5C38028Ca08DA47E179162Eca2DD255B6eC',
+  rpcUrl: 'https://goerli.infura.io/v3/10de1265f1234c93acfec19ca8f4afd7',
+  gateway: '0xe432150cce91c13a887f7D836923d5597adD8E31',
 };
 
 export const config = {
   cosmos: {
-    demo,
-    devnet,
+    testnet: axelarTestnet,
     osmosis,
   },
   evm: {
-    'ganache-0': ganache0,
+    goerli,
   },
 };

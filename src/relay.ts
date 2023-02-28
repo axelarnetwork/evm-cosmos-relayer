@@ -18,11 +18,11 @@ import { initServer } from './api';
 import { logger } from './logger';
 
 async function main() {
-  const evm = config.evm['ganache-0'];
+  const evm = config.evm['goerli'];
   const observedDestinationChains = [config.cosmos.demo.chainId, config.cosmos.osmosis.chainId];
   const listener = new GMPListenerClient(evm.rpcUrl, evm.gateway);
   const evmClient = new EvmClient(evm);
-  const vxClient = await AxelarClient.init(config.cosmos.devnet);
+  const vxClient = await AxelarClient.init(config.cosmos.testnet);
   const demoClient = await AxelarClient.init(config.cosmos.demo);
   const osmoClient = await AxelarClient.init(config.cosmos.osmosis);
 

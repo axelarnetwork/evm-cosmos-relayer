@@ -27,7 +27,7 @@ export class SigningClient {
     _maxRetries = env.MAX_RETRY,
     _retryDelay = env.RETRY_DELAY
   ) {
-    this.config = config || appConfig.cosmos.devnet;
+    this.config = config || appConfig.cosmos.testnet;
     this.sdk = sdk;
     this.queryClient = client;
     this.maxRetries = _maxRetries;
@@ -44,7 +44,7 @@ export class SigningClient {
   }
 
   static async init(_config?: CosmosNetworkConfig) {
-    const config = _config || appConfig.cosmos.devnet;
+    const config = _config || appConfig.cosmos.testnet;
     const _queryClient = await AxelarQueryClient.initOrGetAxelarQueryClient({
       environment: Environment.DEVNET,
       axelarRpcUrl: config.rpcUrl,

@@ -1,6 +1,6 @@
 # EVM to Cosmos Relayer
 
-A relayer between cosmos and evm chains on Axelar devnet.
+A relayer between cosmos and evm chains on Axelar testnet.
 
 ## How to run?
 

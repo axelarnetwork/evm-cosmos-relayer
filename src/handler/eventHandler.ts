@@ -22,7 +22,7 @@ export async function handleEvmToCosmosEvent(
   await prisma.relayData.create({
     data: {
       id,
-      from: 'ganache-0',
+      from: 'goerli',
       to: 'demo-chain',
       callContractWithToken: {
         create: {
@@ -37,20 +37,20 @@ export async function handleEvmToCosmosEvent(
     },
   });
 
-  // Sent a confirm tx to devnet-vx
+  // Sent a confirm tx to testnet-vx
   const confirmTx = await vxClient.confirmEvmTx(
-    config.evm['ganache-0'].name,
+    config.evm['goerli'].name,
     event.hash
   );
   logger.info(
     `[handleEvmToCosmosEvent] Confirmed: ${confirmTx.transactionHash}`
   );
   await vxClient.pollUntilContractCallWithTokenConfirmed(
-    config.evm['ganache-0'].name,
+    config.evm['goerli'].name,
     `${event.hash}-${event.logIndex}`
   );
 
-  // Sent an execute tx to devnet-vx
+  // Sent an execute tx to testnet-vx
   const executeTx = await vxClient.executeGeneralMessageWithToken(
     event.logIndex,
     event.hash,
@@ -85,7 +85,7 @@ export async function handleCosmosToEvmEvent(
     data: {
       id: `${event.hash}-0`,
       from: 'demo-chain',
-      to: 'ganache-0',
+      to: 'goerli',
       status: 0,
       callContractWithToken: {
         create: {

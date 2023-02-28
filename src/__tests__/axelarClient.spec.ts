@@ -4,7 +4,7 @@ describe('AxelarClient', () => {
   let client: AxelarClient;
 
   beforeEach(async () => {
-    client = await AxelarClient.init(config.cosmos.devnet);
+    client = await AxelarClient.init(config.cosmos.testnet);
   });
 
   it('should be able to query balance from demo chain', async () => {
@@ -22,7 +22,7 @@ describe('AxelarClient', () => {
 
   it('event should be confirmed', async () => {
     const event = await client.isContractCallWithTokenConfirmed(
-      'ganache-0',
+      'goerli',
       '0xb1bc7fe20424a261f228907d49a6b1c04995f32b2ab264f5036a7384ae6c33bf-5'
     );
     expect(event).toBeTruthy();

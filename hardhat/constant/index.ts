@@ -1,5 +1,5 @@
 export const evm = {
-  name: "ganache-0",
+  name: "goerli",
   privateKey:
     "8d5dbff28bef9e96c9324efdff1adaf6fc6c73eaed24d1f9c5038edfad590759",
   rpcUrl:
