@@ -4,3 +4,4 @@ src/types/contracts
 .env
 .db
 *.log
+secret.json
