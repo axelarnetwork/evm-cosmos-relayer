@@ -27,7 +27,7 @@ const axelarTestnet: CosmosNetworkConfig = {
 
 const osmosis: CosmosNetworkConfig = {
   mnemonic: env.AXELAR_MNEMONIC,
-  chainId: 'osmosis',
+  chainId: 'osmosis-5',
   denom: 'uosmo',
   rpcUrl: 'https://rpc.testnet.osmosis.zone:443',
   lcdUrl: 'https://lcd-test.osmosis.zone',
