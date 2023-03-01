@@ -20,8 +20,9 @@ const axelarTestnet: CosmosNetworkConfig = {
   mnemonic: env.AXELAR_MNEMONIC,
   chainId: 'axelar-testnet',
   denom: 'uaxl',
+  gasPrice: '12500',
   rpcUrl: 'https://rpc-axelar-testnet.imperator.co:443',
-  lcdUrl: 'https://lcd-axelar-testnet.imperator.co',
+  lcdUrl: 'https://axelartest-lcd.quickapi.com',
   ws: 'ws://rpc-axelar-testnet.imperator.co/wss',
 };
 
@@ -29,6 +30,7 @@ const osmosis: CosmosNetworkConfig = {
   mnemonic: env.AXELAR_MNEMONIC,
   chainId: 'osmosis-5',
   denom: 'uosmo',
+  gasPrice: '12500',
   rpcUrl: 'https://rpc.testnet.osmosis.zone:443',
   lcdUrl: 'https://lcd-test.osmosis.zone',
   ws: 'wss://rpc.testnet.osmosis.zone/websocket',

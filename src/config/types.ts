@@ -5,6 +5,7 @@ export interface CosmosNetworkConfig {
   ws: string;
   denom: string;
   mnemonic: string;
+  gasPrice: string;
 }
 
 export interface EvmNetworkConfig {

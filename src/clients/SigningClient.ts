@@ -3,6 +3,7 @@ import { config as appConfig, env } from '../config';
 import { AxelarSigningClient, Environment } from '@axelar-network/axelarjs-sdk';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { StdFee } from '@cosmjs/stargate';
+import { Decimal } from '@cosmjs/math';
 import { MsgTransfer } from '@axelar-network/axelarjs-types/ibc/applications/transfer/v1/tx';
 import {
   AxelarQueryClient,
@@ -16,14 +17,14 @@ export class SigningClient {
   public config: CosmosNetworkConfig;
   public sdk: AxelarSigningClient;
   public queryClient: AxelarQueryClientType;
-  public fee: StdFee;
+  public fee: StdFee | 'auto';
   public maxRetries: number;
   public retryDelay: number;
 
   constructor(
     sdk: AxelarSigningClient,
     client: AxelarQueryClientType,
-    config?: CosmosNetworkConfig,
+    config: CosmosNetworkConfig,
     _maxRetries = env.MAX_RETRY,
     _retryDelay = env.RETRY_DELAY
   ) {
@@ -33,13 +34,8 @@ export class SigningClient {
     this.maxRetries = _maxRetries;
     this.retryDelay = _retryDelay;
     this.fee = {
-      amount: [
-        {
-          denom: this.config.denom,
-          amount: '1000',
-        },
-      ],
-      gas: '10000000',
+      gas: '20000000', // 20M
+      amount: [{ denom: config.denom, amount: config.gasPrice }],
     };
   }
 
