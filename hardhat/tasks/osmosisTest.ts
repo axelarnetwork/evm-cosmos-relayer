@@ -8,7 +8,7 @@ task('osmosisTest', 'Send GMP tx to osmosis')
     const [deployer] = await ethers.getSigners();
     const { amount } = taskArgs;
     const _amount = ethers.utils.parseUnits(amount, 6);
-    const osmosisTestAddress = '0xa63590B8919dF42C6F03EEBe767502Ec658B0526';
+    const osmosisTestAddress = '0x4f3ED4F09c89eD4F1183664e7e50db9a4F78EeA7';
 
     const osmosisTest = await ethers.getContractAt(
       'OsmosisTest',
@@ -49,7 +49,11 @@ task('osmosisTest', 'Send GMP tx to osmosis')
       destAddress,
       payload,
       symbol,
-      _amount
+      _amount,
+      {
+        value: ethers.utils.parseEther('0.01'),
+        gasPrice: ethers.utils.parseUnits('400', 'gwei'),
+      }
     );
 
     console.log('Sent', tx.hash);
