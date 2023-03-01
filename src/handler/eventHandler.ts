@@ -45,9 +45,11 @@ export async function handleEvmToCosmosEvent(
   logger.info(
     `[handleEvmToCosmosEvent] Confirmed: ${confirmTx.transactionHash}`
   );
+
   await vxClient.pollUntilContractCallWithTokenConfirmed(
     config.evm['goerli'].id,
-    `${event.hash}-${event.logIndex}`
+    `${event.hash}-${event.logIndex}`,
+    10000
   );
 
   // Sent an execute tx to testnet-vx
