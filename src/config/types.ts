@@ -8,6 +8,7 @@ export interface CosmosNetworkConfig {
 }
 
 export interface EvmNetworkConfig {
+  id: string;
   name: string,
   rpcUrl: string,
   gateway: string,

@@ -35,6 +35,7 @@ const osmosis: CosmosNetworkConfig = {
 };
 
 const goerli: EvmNetworkConfig = {
+  id: 'ethereum-2',
   name: 'goerli',
   privateKey: env.EVM_PRIVATE_KEY,
   rpcUrl: 'https://goerli.infura.io/v3/10de1265f1234c93acfec19ca8f4afd7',

@@ -39,14 +39,14 @@ export async function handleEvmToCosmosEvent(
 
   // Sent a confirm tx to testnet-vx
   const confirmTx = await vxClient.confirmEvmTx(
-    config.evm['goerli'].name,
+    config.evm['goerli'].id,
     event.hash
   );
   logger.info(
     `[handleEvmToCosmosEvent] Confirmed: ${confirmTx.transactionHash}`
   );
   await vxClient.pollUntilContractCallWithTokenConfirmed(
-    config.evm['goerli'].name,
+    config.evm['goerli'].id,
     `${event.hash}-${event.logIndex}`
   );
 
