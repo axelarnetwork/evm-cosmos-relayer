@@ -4,6 +4,7 @@ import { AxelarSigningClient, Environment } from '@axelar-network/axelarjs-sdk';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { StdFee } from '@cosmjs/stargate';
 import { Decimal } from '@cosmjs/math';
+import { calculateFee, GasPrice } from '@cosmjs/stargate';
 import { MsgTransfer } from '@axelar-network/axelarjs-types/ibc/applications/transfer/v1/tx';
 import {
   AxelarQueryClient,
@@ -33,10 +34,11 @@ export class SigningClient {
     this.queryClient = client;
     this.maxRetries = _maxRetries;
     this.retryDelay = _retryDelay;
-    this.fee = {
-      gas: '20000000', // 20M
-      amount: [{ denom: config.denom, amount: config.gasPrice }],
-    };
+    this.fee = 'auto';
+    // this.fee = {
+    //   gas: '20000000', // 20M
+    //   amount: [{ denom: config.denom, amount: config.gasPrice }],
+    // };
   }
 
   static async init(_config?: CosmosNetworkConfig) {
@@ -55,6 +57,7 @@ export class SigningClient {
       },
       options: {
         registry,
+        gasPrice: GasPrice.fromString(`${config.gasPrice}${config.denom}`),
       },
     });
 
