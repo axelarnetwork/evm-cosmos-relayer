@@ -1,10 +1,9 @@
 export const evm = {
   name: 'goerli',
-  rpcUrl:
-    'http://a087b4719fc8944a0952490cf1020812-853925870.us-east-2.elb.amazonaws.com:7545',
-  gateway: '0xE720c5C38028Ca08DA47E179162Eca2DD255B6eC',
+  rpcUrl: 'https://goerli.infura.io/v3/10de1265f1234c93acfec19ca8f4afd7',
+  gateway: '0xe432150cce91c13a887f7D836923d5597adD8E31',
 };
 
 export const cosmos = {
-  name: 'demo-chain',
+  name: 'osmosis-5',
 };
