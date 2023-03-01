@@ -3,10 +3,7 @@ import { evm } from '../constant';
 
 async function main() {
   const MultiSend = await ethers.getContractFactory('MultiSend');
-  const multiSend = await MultiSend.deploy(
-    evm.gateway,
-    ethers.constants.AddressZero
-  );
+  const multiSend = await MultiSend.deploy(evm.gateway, evm.gasReceiver);
   await multiSend.deployed();
 
   console.log('MultiSend deployed to:', multiSend.address);
@@ -14,10 +11,7 @@ async function main() {
 
 async function deployOsmosis() {
   const OsmosisTest = await ethers.getContractFactory('OsmosisTest');
-  const osmosisTest = await OsmosisTest.deploy(
-    evm.gateway,
-    ethers.constants.AddressZero
-  );
+  const osmosisTest = await OsmosisTest.deploy(evm.gateway, evm.gasReceiver);
   await osmosisTest.deployed();
 
   console.log('OsmosisTest deployed to:', osmosisTest.address);

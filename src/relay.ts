@@ -18,10 +18,14 @@ import { initServer } from './api';
 import { logger } from './logger';
 
 async function main() {
-  const evm = config.evm['goerli'];
-  const observedDestinationChains = [config.cosmos.osmosis.chainId];
-  const listener = new GMPListenerClient(evm.rpcUrl, evm.gateway);
-  const evmClient = new EvmClient(evm);
+  const observedEvmChains = [config.evm.avax, config.evm.goerli];
+  const observedCosmosChains = [config.cosmos.osmosis.chainId];
+
+  const evmListeners = observedEvmChains.map(
+    (evm) => new GMPListenerClient(evm.rpcUrl, evm.gateway)
+  );
+  const evmClients = observedEvmChains.map((evm) => new EvmClient(evm));
+
   const axelarClient = await AxelarClient.init(config.cosmos.testnet);
   const osmoClient = await AxelarClient.init(config.cosmos.osmosis);
 
@@ -37,11 +41,11 @@ async function main() {
   >();
   const cosmosCompleteObservable = new Subject<IBCPacketEvent>();
 
-  /** ######## Handle events ########## */
+  // Handle for `CallContract` and `CallContractWithTokens` events from evm chains to cosmos chains.
   evmWithTokenObservable
     .pipe(
       filter((event) =>
-        observedDestinationChains.includes(event.args.destinationChain)
+        observedCosmosChains.includes(event.args.destinationChain)
       )
     )
     .subscribe((event) => {
@@ -50,27 +54,34 @@ async function main() {
         .catch((e) => handleAnyError('handleEvmToCosmosEvent', e));
     });
 
-  evmApproveWithTokenObservable.subscribe((event) => {
-    prepareHandler(event, 'handleCosmosToEvmCompleteEvent')
-      .then(() => handleCosmosToEvmCompleteEvent(evmClient, event))
-      .catch((e) => handleAnyError('handleCosmosToEvmCompleteEvent', e));
+  evmClients.forEach((evmClient) => {
+    // Handle for `ContractCallApproved` and `ContractCallApprovedWithMint` events on evm chains.
+    evmApproveWithTokenObservable.subscribe((event) => {
+      prepareHandler(event, 'handleCosmosToEvmCompleteEvent')
+        .then(() => handleCosmosToEvmCompleteEvent(evmClient, event))
+        .catch((e) => handleAnyError('handleCosmosToEvmCompleteEvent', e));
+    });
+
+    // Handle for `GeneralMessageApprovedWithToken` events on cosmos chains.
+    cosmosWithTokenObservable.subscribe((event) => {
+      prepareHandler(event, 'handleCosmosToEvmEvent')
+        .then(() => handleCosmosToEvmEvent(axelarClient, evmClient, event))
+        .catch((e) => handleAnyError('handleCosmosToEvmEvent', e));
+    });
   });
 
-  cosmosWithTokenObservable.subscribe((event) => {
-    prepareHandler(event, 'handleCosmosToEvmEvent')
-      .then(() => handleCosmosToEvmEvent(axelarClient, evmClient, event))
-      .catch((e) => handleAnyError('handleCosmosToEvmEvent', e));
-  });
-
+  // Handle for `IBCPacketComplete` events on cosmos chains.
   cosmosCompleteObservable.subscribe((event) => {
-    prepareHandler(event, 'handleEvmToCosmosCompleteEvent')
+    prepareHandler(event, 'handleEvmToCosmsCompleteEvent')
       .then(() => handleEvmToCosmosCompleteEvent(osmoClient, event))
       .catch((e) => handleAnyError('handleEvmToCosmosCompleteEvent', e));
   });
 
-  // ########## Listens for events ##########
-  // listen for events on cosmos and evm
-  listener.listenEVM(evmWithTokenObservable, evmApproveWithTokenObservable);
+  // Listens for events on evm chains.
+  evmListeners.forEach((listener) => {
+    listener.listenEVM(evmWithTokenObservable, evmApproveWithTokenObservable);
+  });
+
   axelarClient.listenForCosmosGMP(cosmosWithTokenObservable);
   axelarClient.listenForIBCComplete(cosmosCompleteObservable);
 }

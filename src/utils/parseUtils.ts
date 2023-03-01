@@ -35,9 +35,9 @@ export const parseGMPEvent = (
     // sourceChain: removeQuote(event[`${key}.source_chain`][0]),
     sender: removeQuote(event[`${key}.sender`][0]),
     destinationChain: removeQuote(event[`${key}.destination_chain`][0]),
-    payload: '0x' + decodeBase64(removeQuote(event[`${key}.payload`][0])),
+    payload: `0x${decodeBase64(removeQuote(event[`${key}.payload`][0]))}`,
     payloadHash:
-      '0x' + decodeBase64(removeQuote(event[`${key}.payload_hash`][0])),
+      `0x${decodeBase64(removeQuote(event[`${key}.payload_hash`][0]))}`,
     symbol: coin.denom,
     amount: coin.amount,
     destinationContractAddress: removeQuote(

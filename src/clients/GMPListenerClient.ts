@@ -13,6 +13,7 @@ import { filterEventArgs } from '../utils/filterUtils';
 import { ContractCallWithTokenEventObject } from '.';
 import { ContractCallApprovedWithMintEventObject } from '../types/contracts/IAxelarGateway';
 import { logger } from '../logger';
+import { getChainNameFromChainId } from '../utils/utils';
 
 export class GMPListenerClient {
   gatewayContract: IAxelarGateway;
@@ -38,14 +39,24 @@ export class GMPListenerClient {
     // events.forEach((event) => {
     //   logger.info(event.args.destinationChain);
     // });
+    const chainId = await this.gatewayContract.provider
+      .getNetwork()
+      .then(({ chainId }) => chainId);
 
     this.gatewayContract.on(filter, (...args) => {
       const event = args[7];
       if (event.blockNumber <= this.currentBlock) return;
 
+      const chain = getChainNameFromChainId(chainId);
+      if (!chain) {
+        logger.error('Chain not found', chainId);
+        return;
+      }
+
       subject.next({
         hash: event.transactionHash,
         blockNumber: event.blockNumber,
+        sourceChain: chain.id,
         logIndex: event.logIndex,
         args: filterEventArgs(event),
       });
@@ -56,6 +67,17 @@ export class GMPListenerClient {
     subject: Subject<EvmEvent<ContractCallApprovedWithMintEventObject>>
   ) {
     const filter = this.gatewayContract.filters.ContractCallApprovedWithMint();
+
+    const chainId = await this.gatewayContract.provider
+      .getNetwork()
+      .then(({ chainId }) => chainId);
+
+    const chain = getChainNameFromChainId(chainId);
+    if (!chain) {
+      logger.error('Chain not found', chainId);
+      return;
+    }
+
     this.gatewayContract.on(filter, (...args) => {
       const event = args[9];
       if (event.blockNumber <= this.currentBlock) return;
@@ -64,6 +86,7 @@ export class GMPListenerClient {
         hash: event.transactionHash,
         blockNumber: event.blockNumber,
         logIndex: event.logIndex,
+        sourceChain: chain.id,
         args: filterEventArgs(event),
       });
     });
@@ -80,7 +103,7 @@ export class GMPListenerClient {
 
     // update block number
     this.currentBlock = await this.gatewayContract.provider.getBlockNumber();
-    logger.info(`Current block number: ${this.currentBlock}`);
+    logger.info(`Current block number : ${this.currentBlock}`);
 
     // listen for gmp event that originates from the evm chain.
     this.listenCallContractWithToken(evmWithTokenObservable);

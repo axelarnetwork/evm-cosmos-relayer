@@ -38,10 +38,20 @@ const osmosis: CosmosNetworkConfig = {
 
 const goerli: EvmNetworkConfig = {
   id: 'ethereum-2',
+  chainId: 5,
   name: 'goerli',
   privateKey: env.EVM_PRIVATE_KEY,
   rpcUrl: 'https://goerli.infura.io/v3/10de1265f1234c93acfec19ca8f4afd7',
   gateway: '0xe432150cce91c13a887f7D836923d5597adD8E31',
+};
+
+const avax: EvmNetworkConfig = {
+  id: 'Avalanche',
+  name: 'Avalanche',
+  chainId: 43113,
+  privateKey: env.EVM_PRIVATE_KEY,
+  rpcUrl: 'https://api.avax-test.network/ext/bc/C/rpc',
+  gateway: '0xC249632c2D40b9001FE907806902f63038B737Ab',
 };
 
 export const config = {
@@ -51,5 +61,6 @@ export const config = {
   },
   evm: {
     goerli,
+    avax
   },
 };
