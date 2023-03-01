@@ -37,7 +37,7 @@ task('osmosisTest', 'Send GMP tx to osmosis')
       (await erc20.allowance(deployer.address, osmosisTest.address)).lt(_amount)
     ) {
       await erc20
-        .approve(osmosisTest.address, _amount)
+        .approve(osmosisTest.address, ethers.constants.MaxUint256)
         .then((tx: any) => tx.wait());
       console.log('Approved');
     } else {
