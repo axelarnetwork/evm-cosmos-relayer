@@ -45,6 +45,16 @@ export interface LinkRequest {
   recipientChain: string;
 }
 
+export interface ContractCallSubmitted {
+  messageId: string;
+  sender: string;
+  sourceChain: string;
+  destinationChain: string;
+  contractAddress: string;
+  payload: string;
+  payloadHash: string;
+}
+
 export interface MsgTransfer {
   /** the port on which the packet will be sent */
   sourcePort: string;
