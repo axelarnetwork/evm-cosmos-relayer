@@ -10,6 +10,7 @@ import {
 import { logger } from '../logger';
 import {
   ContractCallSubmitted,
+  ContractCallWithTokenSubmitted,
   EvmEvent,
   IBCEvent,
   IBCPacketEvent,
@@ -90,16 +91,16 @@ export async function handleEvmToCosmosEvent(
   );
 }
 
-export async function handleCosmosToEvmEvent(
+export async function handleCosmosToEvmContractCallEvent(
   vxClient: AxelarClient,
   evmClient: EvmClient,
   event: IBCEvent<ContractCallSubmitted>
 ) {
   await prisma.relayData.create({
     data: {
-      id: `${event.hash}-0`,
-      from: 'osmosis-5',
-      to: 'goerli',
+      id: `${event.args.messageId}`,
+      from: event.args.sourceChain,
+      to: event.args.destinationChain,
       status: 0,
       callContract: {
         create: {
@@ -112,6 +113,41 @@ export async function handleCosmosToEvmEvent(
     },
   });
 
+  await relayTxToEvmGateway(vxClient, evmClient, event);
+}
+
+export async function handleCosmosToEvmContractCallWithTokenEvent(
+  vxClient: AxelarClient,
+  evmClient: EvmClient,
+  event: IBCEvent<ContractCallWithTokenSubmitted>
+) {
+  await prisma.relayData.create({
+    data: {
+      id: `${event.args.messageId}`,
+      from: event.args.sourceChain,
+      to: event.args.destinationChain,
+      status: 0,
+      callContractWithToken: {
+        create: {
+          payload: event.args.payload,
+          payloadHash: event.args.payloadHash,
+          contractAddress: event.args.contractAddress,
+          sourceAddress: event.args.sender,
+          amount: event.args.amount,
+          symbol: event.args.symbol,
+        },
+      },
+    },
+  });
+
+  await relayTxToEvmGateway(vxClient, evmClient, event);
+}
+
+async function relayTxToEvmGateway(
+  vxClient: AxelarClient,
+  evmClient: EvmClient,
+  event: IBCEvent<ContractCallSubmitted>
+) {
   const pendingCommands = await vxClient.getPendingCommands(
     event.args.destinationChain
   );

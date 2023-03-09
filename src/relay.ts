@@ -3,6 +3,7 @@ import { config } from './config';
 import { Subject, filter } from 'rxjs';
 import {
   ContractCallSubmitted,
+  ContractCallWithTokenSubmitted,
   EvmEvent,
   IBCEvent,
   IBCPacketEvent,
@@ -17,13 +18,47 @@ import {
   handleAnyError,
   handleEvmToCosmosCompleteEvent,
   handleCosmosToEvmCallContractWithTokenCompleteEvent,
-  handleCosmosToEvmEvent,
+  handleCosmosToEvmContractCallEvent,
   handleEvmToCosmosEvent,
   prepareHandler,
   handleCosmosToEvmCallContractCompleteEvent,
+  handleCosmosToEvmContractCallWithTokenEvent,
 } from './handler';
 import { initServer } from './api';
 import { logger } from './logger';
+
+// Create an event subject for listening the ContractCallWithToken event at the gateway contract
+const evmWithTokenObservable = new Subject<
+  EvmEvent<ContractCallWithTokenEventObject>
+>();
+
+// Create an event subject for listening the ContractCall event at the gateway contract
+const evmContractCallObservable = new Subject<
+  EvmEvent<ContractCallEventObject>
+>();
+
+// Create an event subject for listening the ContractCallWithToken approval event at the gateway contract
+const evmApproveWithTokenObservable = new Subject<
+  EvmEvent<ContractCallApprovedWithMintEventObject>
+>();
+
+// Create an event subject for listening the ContractCall approval event at the gateway contract
+const evmApproveObservable = new Subject<
+  EvmEvent<ContractCallApprovedEventObject>
+>();
+
+// Create an event subject for listening the ContractCall event at Axelar network
+const cosmosContractCallObservable = new Subject<
+  IBCEvent<ContractCallSubmitted>
+>();
+
+// Create an event subject for listening the ContractCallWithToken event at Axelar network
+const cosmosContractCallWithTokenObservable = new Subject<
+  IBCEvent<ContractCallWithTokenSubmitted>
+>();
+
+// Create an event subject for listening to the IBC packet event
+const cosmosCompleteObservable = new Subject<IBCPacketEvent>();
 
 async function main() {
   const evm = config.evm['goerli'];
@@ -32,29 +67,6 @@ async function main() {
   const evmClient = new EvmClient(evm);
   const axelarClient = await AxelarClient.init(config.cosmos.testnet);
   const osmoClient = await AxelarClient.init(config.cosmos.osmosis);
-
-  // Create an event subject for ContractCallWithTokenListenerEvent
-  const evmWithTokenObservable = new Subject<
-    EvmEvent<ContractCallWithTokenEventObject>
-  >();
-
-  // Create an event subject for listening the ContractCallWithToken approval event at the gateway contract
-  const evmApproveWithTokenObservable = new Subject<
-    EvmEvent<ContractCallApprovedWithMintEventObject>
-  >();
-
-  // Create an event subject for listening the ContractCall approval event at the gateway contract
-  const evmApproveObservable = new Subject<
-    EvmEvent<ContractCallApprovedEventObject>
-  >();
-
-  // Create an event subject for listening the ContractCall event at Axelar network
-  const cosmosContractCallObservable = new Subject<
-    IBCEvent<ContractCallSubmitted>
-  >();
-
-  // Create an event subject for listening to the IBC packet event
-  const cosmosCompleteObservable = new Subject<IBCPacketEvent>();
 
   /** ######## Handle events ########## */
 
@@ -82,7 +94,22 @@ async function main() {
   // Subscribe to the ContractCall event at the axelar network. (Cosmos -> EVM direction)
   cosmosContractCallObservable.subscribe((event) => {
     prepareHandler(event, 'handleCosmosToEvmEvent')
-      .then(() => handleCosmosToEvmEvent(axelarClient, evmClient, event))
+      .then(() =>
+        handleCosmosToEvmContractCallEvent(axelarClient, evmClient, event)
+      )
+      .catch((e) => handleAnyError('handleCosmosToEvmEvent', e));
+  });
+
+  // Subscribe to the ContractCallWithToken event at the axelar network. (Cosmos -> EVM direction)
+  cosmosContractCallWithTokenObservable.subscribe((event) => {
+    prepareHandler(event, 'handleCosmosToEvmEvent')
+      .then(() =>
+        handleCosmosToEvmContractCallWithTokenEvent(
+          axelarClient,
+          evmClient,
+          event
+        )
+      )
       .catch((e) => handleAnyError('handleCosmosToEvmEvent', e));
   });
 
