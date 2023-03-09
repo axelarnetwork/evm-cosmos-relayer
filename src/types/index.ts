@@ -55,6 +55,18 @@ export interface ContractCallSubmitted {
   payloadHash: string;
 }
 
+export interface ContractCallWithTokenSubmitted {
+  messageId: string;
+  sender: string;
+  sourceChain: string;
+  destinationChain: string;
+  contractAddress: string;
+  payload: string;
+  payloadHash: string;
+  symbol: string;
+  amount: string;
+}
+
 export interface MsgTransfer {
   /** the port on which the packet will be sent */
   sourcePort: string;
