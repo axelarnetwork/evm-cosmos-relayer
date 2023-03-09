@@ -66,6 +66,7 @@ export const initServer = async () => {
         },
         include: {
           callContractWithToken: true,
+          callContract: true,
         },
       });
 
@@ -99,6 +100,7 @@ export const initServer = async () => {
           limit: Joi.number().integer().min(1).max(100).default(10),
           include: {
             callContractWithToken: Joi.boolean().default(false),
+            callContract: Joi.boolean().default(false),
           },
           orderBy: Joi.object()
             .keys({
