@@ -40,7 +40,7 @@ const devnet: CosmosNetworkConfig = {
 
 const osmosis: CosmosNetworkConfig = {
   mnemonic: env.AXELAR_MNEMONIC,
-  chainId: 'osmosis',
+  chainId: 'osmo-test-4',
   denom: 'uosmo',
   rpcUrl:
     'https://rpc.testnet.osmosis.zone:443',
