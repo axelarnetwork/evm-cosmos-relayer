@@ -23,7 +23,7 @@ const axelarTestnet: CosmosNetworkConfig = {
   gasPrice: '0.0125',
   rpcUrl: 'https://rpc-axelar-testnet.imperator.co:443',
   lcdUrl: 'https://axelartest-lcd.quickapi.com',
-  ws: 'ws://rpc-axelar-testnet.imperator.co/wss',
+  ws: 'wss://axelartest-rpc.quantnode.tech/websocket',
 };
 
 const osmosis: CosmosNetworkConfig = {
@@ -31,7 +31,7 @@ const osmosis: CosmosNetworkConfig = {
   chainId: 'osmosis-5',
   denom: 'uosmo',
   gasPrice: '0.0125',
-  rpcUrl: 'https://rpc.testnet.osmosis.zone:443',
+  rpcUrl: 'https://rpc-test.osmosis.zone:443',
   lcdUrl: 'https://lcd-test.osmosis.zone',
   ws: 'wss://rpc.testnet.osmosis.zone/websocket',
 };
