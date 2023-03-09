@@ -3,8 +3,7 @@ import { config as appConfig, env } from '../config';
 import { AxelarSigningClient, Environment } from '@axelar-network/axelarjs-sdk';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { StdFee } from '@cosmjs/stargate';
-import { Decimal } from '@cosmjs/math';
-import { calculateFee, GasPrice } from '@cosmjs/stargate';
+import { GasPrice } from '@cosmjs/stargate';
 import { MsgTransfer } from '@axelar-network/axelarjs-types/ibc/applications/transfer/v1/tx';
 import {
   AxelarQueryClient,
