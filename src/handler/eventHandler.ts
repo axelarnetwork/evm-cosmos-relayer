@@ -8,7 +8,16 @@ import {
   prisma,
 } from '..';
 import { logger } from '../logger';
-import { EvmEvent, IBCEvent, IBCPacketEvent } from '../types';
+import {
+  ContractCallSubmitted,
+  EvmEvent,
+  IBCEvent,
+  IBCPacketEvent,
+} from '../types';
+import {
+  ContractCallApprovedEvent,
+  ContractCallApprovedEventObject,
+} from '../types/contracts/IAxelarGateway';
 import {
   getBatchCommandIdFromSignTx,
   getPacketSequenceFromExecuteTx,
@@ -46,13 +55,16 @@ export async function handleEvmToCosmosEvent(
     `[handleEvmToCosmosEvent] Confirmed: ${confirmTx.transactionHash}`
   );
 
+  // Wait for the tx to be confirmed
   await vxClient.pollUntilContractCallWithTokenConfirmed(
     config.evm['goerli'].id,
     `${event.hash}-${event.logIndex}`,
     10000
   );
 
-  // Sent an execute tx to testnet-vx
+  // Sent an execute tx to testnet
+  // Check if the tx is already executed
+
   const executeTx = await vxClient.executeGeneralMessageWithToken(
     event.logIndex,
     event.hash,
@@ -81,7 +93,7 @@ export async function handleEvmToCosmosEvent(
 export async function handleCosmosToEvmEvent(
   vxClient: AxelarClient,
   evmClient: EvmClient,
-  event: IBCEvent<ContractCallWithTokenEventObject>
+  event: IBCEvent<ContractCallSubmitted>
 ) {
   await prisma.relayData.create({
     data: {
@@ -89,14 +101,12 @@ export async function handleCosmosToEvmEvent(
       from: 'osmosis-5',
       to: 'goerli',
       status: 0,
-      callContractWithToken: {
+      callContract: {
         create: {
           payload: event.args.payload,
           payloadHash: event.args.payloadHash,
-          contractAddress: event.args.destinationContractAddress,
+          contractAddress: event.args.contractAddress,
           sourceAddress: event.args.sender,
-          amount: event.args.amount.toString(),
-          symbol: event.args.symbol,
         },
       },
     },
@@ -114,6 +124,7 @@ export async function handleCosmosToEvmEvent(
   if (pendingCommands.length === 0) return;
 
   const signCommand = await vxClient.signCommands(event.args.destinationChain);
+
   const batchedCommandId = getBatchCommandIdFromSignTx(signCommand);
   logger.info(`[handleCosmosToEvmEvent] BatchCommandId: ${batchedCommandId}`);
 
@@ -126,7 +137,7 @@ export async function handleCosmosToEvmEvent(
     `[handleCosmosToEvmEvent] BatchCommands: ${JSON.stringify(executeData)}`
   );
 
-  const tx = await evmClient.execute(executeData);
+  const tx = await evmClient.gatewayExecute(executeData);
   if (!tx) return;
   logger.info(`[handleCosmosToEvmEvent] Execute: ${tx.transactionHash}`);
 
@@ -144,7 +155,68 @@ export async function handleCosmosToEvmEvent(
   logger.info(`[handleCosmosToEvmEvent] DBUpdate: ${JSON.stringify(record)}`);
 }
 
-export async function handleCosmosToEvmCompleteEvent(
+export async function handleCosmosToEvmCallContractCompleteEvent(
+  evmClient: EvmClient,
+  event: EvmEvent<ContractCallApprovedEventObject>
+) {
+  const {
+    commandId,
+    contractAddress,
+    sourceAddress,
+    sourceChain,
+    payloadHash,
+  } = event.args;
+
+  const data = await prisma.callContract.findFirst({
+    where: {
+      payloadHash,
+      sourceAddress,
+      contractAddress,
+    },
+    orderBy: {
+      updatedAt: 'desc',
+    },
+    select: {
+      payload: true,
+      id: true,
+    },
+  });
+
+  if (!data)
+    return logger.info(
+      `[handleCosmosToEvmCompleteEvent]: Cannot find payload from given payloadHash: ${payloadHash}`
+    );
+
+  const { payload, id } = data;
+
+  const tx = await evmClient.execute(
+    contractAddress,
+    commandId,
+    sourceChain,
+    sourceAddress,
+    payload
+  );
+
+  logger.info(
+    `[handleCosmosToEvmCompleteEvent] execute: ${JSON.stringify(tx)}`
+  );
+
+  const executeDb = await prisma.relayData.update({
+    where: {
+      id,
+    },
+    data: {
+      status: 2,
+      updatedAt: new Date(),
+    },
+  });
+
+  logger.info(
+    `[handleCosmosToEvmCompleteEvent] DBUpdate: ${JSON.stringify(executeDb)}`
+  );
+}
+
+export async function handleCosmosToEvmCallContractWithTokenCompleteEvent(
   evmClient: EvmClient,
   event: EvmEvent<ContractCallApprovedWithMintEventObject>
 ) {
