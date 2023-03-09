@@ -11,7 +11,10 @@ export {
 import { EvmEvent } from '../types';
 import { filterEventArgs } from '../utils/filterUtils';
 import { ContractCallWithTokenEventObject } from '.';
-import { ContractCallApprovedWithMintEventObject } from '../types/contracts/IAxelarGateway';
+import {
+  ContractCallApprovedEventObject,
+  ContractCallApprovedWithMintEventObject,
+} from '../types/contracts/IAxelarGateway';
 import { logger } from '../logger';
 
 export class GMPListenerClient {
@@ -69,11 +72,29 @@ export class GMPListenerClient {
     });
   }
 
+  private async listenCallContractApprove(
+    subject: Subject<EvmEvent<ContractCallApprovedEventObject>>
+  ) {
+    const filter = this.gatewayContract.filters.ContractCallApproved();
+    this.gatewayContract.on(filter, (...args) => {
+      const event = args[7];
+      if (event.blockNumber <= this.currentBlock) return;
+
+      subject.next({
+        hash: event.transactionHash,
+        blockNumber: event.blockNumber,
+        logIndex: event.logIndex,
+        args: filterEventArgs(event),
+      });
+    });
+  }
+
   public async listenEVM(
     evmWithTokenObservable: Subject<EvmEvent<ContractCallWithTokenEventObject>>,
     evmApproveWithTokenObservable: Subject<
       EvmEvent<ContractCallApprovedWithMintEventObject>
-    >
+    >,
+    evmApproveObservable: Subject<EvmEvent<ContractCallApprovedEventObject>>
   ) {
     // clear all listeners before subscribe a new one.
     this.gatewayContract.removeAllListeners();
@@ -85,7 +106,10 @@ export class GMPListenerClient {
     // listen for gmp event that originates from the evm chain.
     this.listenCallContractWithToken(evmWithTokenObservable);
 
-    // listen for the gmp approve event at the evm chain where it is sent from cosmos.
+    // listen for the CallContractApproveWithMint event at the evm chain where it is sent from cosmos.
     this.listenCallContractWithTokenApprove(evmApproveWithTokenObservable);
+
+    // listen for the CallContractApprove event at the evm chain where it is sent from cosmos.
+    this.listenCallContractApprove(evmApproveObservable);
   }
 }
