@@ -1,5 +1,9 @@
 import { IBCEvent } from '../types';
-import { ContractCallWithTokenEventObject } from '../types/contracts/IAxelarGateway';
+import {
+  ContractCallEventObject,
+  ContractCallWithTokenEventObject,
+} from '../types/contracts/IAxelarGateway';
+import { ContractCallSubmitted } from '../types';
 import { decodeBase64, removeQuote } from './utils';
 
 export const getPacketSequenceFromExecuteTx = (executeTx: any) => {
@@ -26,23 +30,20 @@ export const getBatchCommandIdFromSignTx = (signTx: any) => {
   return batchedCommandId;
 };
 
-export const parseGMPEvent = (
+export const parseContractCallSubmittedEvent = (
   event: any
-): IBCEvent<ContractCallWithTokenEventObject> => {
-  const key = 'axelar.axelarnet.v1beta1.GeneralMessageApprovedWithToken';
-  const coin = JSON.parse(event[`${key}.coin`][0]);
+): IBCEvent<ContractCallSubmitted> => {
+  const key = 'axelar.axelarnet.v1beta1.ContractCallSubmitted';
   const data = {
-    // sourceChain: removeQuote(event[`${key}.source_chain`][0]),
+    messageId: removeQuote(event[`${key}.message_id`][0]),
     sender: removeQuote(event[`${key}.sender`][0]),
+    sourceChain: removeQuote(event[`${key}.source_chain`][0]),
     destinationChain: removeQuote(event[`${key}.destination_chain`][0]),
-    payload: '0x' + decodeBase64(removeQuote(event[`${key}.payload`][0])),
-    payloadHash:
-      '0x' + decodeBase64(removeQuote(event[`${key}.payload_hash`][0])),
-    symbol: coin.denom,
-    amount: coin.amount,
-    destinationContractAddress: removeQuote(
-      event[`${key}.destination_address`][0]
-    ),
+    contractAddress: removeQuote(event[`${key}.contract_address`][0]),
+    payload: `0x${decodeBase64(removeQuote(event[`${key}.payload`][0]))}`,
+    payloadHash: `0x${decodeBase64(
+      removeQuote(event[`${key}.payload_hash`][0])
+    )}`,
   };
 
   return {
