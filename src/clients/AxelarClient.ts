@@ -9,10 +9,10 @@ import { sleep } from '../utils/utils';
 import { sha256 } from 'ethers/lib/utils';
 import ReconnectingWebSocket from 'reconnecting-websocket';
 import { Subject } from 'rxjs';
-import { IBCEvent, IBCPacketEvent } from '../types';
+import { ContractCallSubmitted, IBCEvent, IBCPacketEvent } from '../types';
 import WebSocket from 'isomorphic-ws';
 import { SigningClient } from '.';
-import { parseGMPEvent } from '../utils/parseUtils';
+import { parseContractCallSubmittedEvent } from '../utils/parseUtils';
 import { ContractCallWithTokenEventObject } from '../types/contracts/IAxelarGateway';
 import { logger } from '../logger';
 
@@ -56,9 +56,12 @@ export class AxelarClient {
       this.signingClient.getAddress(),
       chain
     );
+
     return this.signingClient.broadcast(payload).catch((e: any) => {
       logger.error(
-        `[AxelarClient.signCommands] Failed to broadcast ${JSON.stringify(e)}`
+        `[AxelarClient.signCommands] Failed to broadcast signCommands ${JSON.stringify(
+          e
+        )}`
       );
     });
   }
@@ -78,7 +81,7 @@ export class AxelarClient {
       });
     }
 
-    return '0x' + response.executeData;
+    return `0x${response.executeData}`;
   }
 
   public async executeGeneralMessageWithToken(
@@ -132,13 +135,10 @@ export class AxelarClient {
     }
   }
 
-  public listenForCosmosGMP(
-    subject: Subject<IBCEvent<ContractCallWithTokenEventObject>>
-  ) {
-    // Debugging Purpose: Logging balance update
+  public listenForCosmosGMP(subject: Subject<IBCEvent<ContractCallSubmitted>>) {
     const options = {
       WebSocket, // custom WebSocket constructor
-      connectionTimeout: 1000,
+      connectionTimeout: 30000,
       maxRetries: 10,
     };
 
@@ -152,7 +152,7 @@ export class AxelarClient {
       options
     );
 
-    const topic = `tm.event='Tx' AND axelar.axelarnet.v1beta1.GeneralMessageApprovedWithToken.source_chain EXISTS`;
+    const topic = `tm.event='Tx' AND axelar.axelarnet.v1beta1.ContractCallSubmitted.message_id EXISTS`;
 
     this.gmpWs.send(
       JSON.stringify({
@@ -162,6 +162,7 @@ export class AxelarClient {
         params: [topic],
       })
     );
+
     this.gmpWs.addEventListener('message', (ev: MessageEvent<any>) => {
       // convert buffer to json
       const event = JSON.parse(ev.data.toString());
@@ -170,9 +171,15 @@ export class AxelarClient {
       if (!event.result || event.result.query !== topic) return;
 
       // parse the event data
-      const data = parseGMPEvent(event.result.events);
+      try {
+        const data = parseContractCallSubmittedEvent(event.result.events);
 
-      subject.next(data);
+        subject.next(data);
+      } catch (e) {
+        logger.error(
+          `[AxelarClient.listenForCosmosGMP] Error parsing GMP event: ${e}`
+        );
+      }
     });
   }
 
