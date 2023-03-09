@@ -30,14 +30,34 @@ export class EvmClient {
     this.retryDelay = _retryDelay;
   }
 
-  public execute(executeData: string) {
+  public gatewayExecute(executeData: string) {
     return this.submitTx({
       to: this.gateway.address,
       data: executeData,
     }).catch((e: any) => {
-      logger.error(`[EvmClient.execute] Failed ${JSON.stringify(e)}`);
+      logger.error(`[EvmClient.gatewayExecute] Failed ${JSON.stringify(e)}`);
       return undefined;
     });
+  }
+
+  public execute(
+    contractAddress: string,
+    commandId: string,
+    sourceChain: string,
+    sourceAddress: string,
+    payload: string
+  ) {
+    const executable: IAxelarExecutable = IAxelarExecutable__factory.connect(
+      contractAddress,
+      this.wallet
+    );
+    return executable.populateTransaction
+      .execute(commandId, sourceChain, sourceAddress, payload)
+      .then((tx) => this.submitTx(tx))
+      .catch((e: any) => {
+        logger.error(`[EvmClient.execute] Failed ${JSON.stringify(e)}`);
+        return undefined;
+      });
   }
 
   public executeWithToken(
