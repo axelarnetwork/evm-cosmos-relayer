@@ -1,8 +1,7 @@
 import 'dotenv/config';
-import { CosmosNetworkConfig, EvmNetworkConfig } from './types';
 
 export const env = {
-  DEV: process.env.DEV || false,
+  DEV: process.env.DEV,
   AXELAR_MNEMONIC: process.env.AXELAR_MNEMONIC || '',
   EVM_PRIVATE_KEY: process.env.EVM_PRIVATE_KEY || '',
   MAX_RETRY: parseInt(process.env.MAX_RETRY || '5'),
@@ -16,40 +15,4 @@ export const env = {
   DD_API_KEY: process.env.DD_API_KEY || '',
 };
 
-const axelarTestnet: CosmosNetworkConfig = {
-  mnemonic: env.AXELAR_MNEMONIC,
-  chainId: 'axelar-testnet',
-  denom: 'uaxl',
-  gasPrice: '0.0125',
-  rpcUrl: 'https://rpc-axelar-testnet.imperator.co:443',
-  lcdUrl: 'https://axelartest-lcd.quickapi.com',
-  ws: 'wss://axelartest-rpc.quantnode.tech/websocket',
-};
-
-const osmosis: CosmosNetworkConfig = {
-  mnemonic: env.AXELAR_MNEMONIC,
-  chainId: 'osmosis-5',
-  denom: 'uosmo',
-  gasPrice: '0.0125',
-  rpcUrl: 'https://rpc-test.osmosis.zone:443',
-  lcdUrl: 'https://lcd-test.osmosis.zone',
-  ws: 'wss://rpc.testnet.osmosis.zone/websocket',
-};
-
-const goerli: EvmNetworkConfig = {
-  id: 'ethereum-2',
-  name: 'goerli',
-  privateKey: env.EVM_PRIVATE_KEY,
-  rpcUrl: 'https://goerli.infura.io/v3/10de1265f1234c93acfec19ca8f4afd7',
-  gateway: '0xe432150cce91c13a887f7D836923d5597adD8E31',
-};
-
-export const config = {
-  cosmos: {
-    testnet: axelarTestnet,
-    osmosis,
-  },
-  evm: {
-    goerli,
-  },
-};
+export * from './chains';
