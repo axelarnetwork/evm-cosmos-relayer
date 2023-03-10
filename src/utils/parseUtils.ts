@@ -64,8 +64,8 @@ export const parseContractCallWithTokenSubmittedEvent = (
     sourceChain: removeQuote(event[`${key}.source_chain`][0]),
     destinationChain: removeQuote(event[`${key}.destination_chain`][0]),
     contractAddress: removeQuote(event[`${key}.contract_address`][0]),
-    // amount: parseInt(removeQuote(event[`${key}.coins`][0])), // coin.amount and coin.denom?
-    // symbol: removeQuote(event[`${key}.symbol`][0]),
+    amount: '0', // coin.amount and coin.denom?
+    symbol: 'aUSDC',
     payload: `0x${decodeBase64(removeQuote(event[`${key}.payload`][0]))}`,
     payloadHash: `0x${decodeBase64(
       removeQuote(event[`${key}.payload_hash`][0])

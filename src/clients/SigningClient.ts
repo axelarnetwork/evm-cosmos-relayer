@@ -1,5 +1,5 @@
 import { CosmosNetworkConfig } from '../config/types';
-import { networks as appConfig, env } from '../config';
+import { axelarChain, env } from '../config';
 import { AxelarSigningClient, Environment } from '@axelar-network/axelarjs-sdk';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { StdFee } from '@cosmjs/stargate';
@@ -28,7 +28,7 @@ export class SigningClient {
     _maxRetries = env.MAX_RETRY,
     _retryDelay = env.RETRY_DELAY
   ) {
-    this.config = config || appConfig.cosmos.axelar;
+    this.config = config || axelarChain;
     this.sdk = sdk;
     this.queryClient = client;
     this.maxRetries = _maxRetries;
@@ -41,7 +41,7 @@ export class SigningClient {
   }
 
   static async init(_config?: CosmosNetworkConfig) {
-    const config = _config || appConfig.cosmos.axelar;
+    const config = _config || axelarChain;
     const _queryClient = await AxelarQueryClient.initOrGetAxelarQueryClient({
       environment: Environment.DEVNET,
       axelarRpcUrl: config.rpcUrl,

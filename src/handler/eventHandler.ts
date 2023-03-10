@@ -3,7 +3,6 @@ import {
   ContractCallApprovedWithMintEventObject,
   ContractCallWithTokenEventObject,
   EvmClient,
-  networks,
   env,
   prisma,
 } from '..';
@@ -38,7 +37,7 @@ export async function handleEvmToCosmosEvent(
         create: {
           payload: event.args.payload,
           payloadHash: event.args.payloadHash,
-          contractAddress: event.args.destinationContractAddress,
+          contractAddress: event.args.contractAddress,
           sourceAddress: event.args.sender,
           amount: event.args.amount.toString(),
           symbol: event.args.symbol,
@@ -154,16 +153,16 @@ async function relayTxToEvmGateway(
   );
 
   // If no evm client found, return
-  if(!evmClient) return;
+  if (!evmClient) return;
 
   const pendingCommands = await vxClient.getPendingCommands(
     event.args.destinationChain
-    );
+  );
 
-    logger.info(
-      `[handleCosmosToEvmEvent] PendingCommands: ${JSON.stringify(
-        pendingCommands
-        )}`
+  logger.info(
+    `[handleCosmosToEvmEvent] PendingCommands: ${JSON.stringify(
+      pendingCommands
+    )}`
   );
   if (pendingCommands.length === 0) return;
 
@@ -175,11 +174,11 @@ async function relayTxToEvmGateway(
   const executeData = await vxClient.getExecuteDataFromBatchCommands(
     event.args.destinationChain,
     batchedCommandId
-    );
+  );
 
-    logger.info(
-      `[handleCosmosToEvmEvent] BatchCommands: ${JSON.stringify(executeData)}`
-      );
+  logger.info(
+    `[handleCosmosToEvmEvent] BatchCommands: ${JSON.stringify(executeData)}`
+  );
 
   const tx = await evmClient.gatewayExecute(executeData);
   if (!tx) return;
@@ -209,7 +208,7 @@ export async function handleCosmosToEvmCallContractCompleteEvent(
   );
 
   // If no evm client found, return
-  if(!evmClient) return;
+  if (!evmClient) return;
 
   const {
     commandId,
@@ -282,8 +281,10 @@ export async function handleCosmosToEvmCallContractWithTokenCompleteEvent(
     payloadHash,
   } = event.args;
 
-  const client = evmClients.find((client) => client.chainId === event.args.);
-
+  const evmClient = evmClients.find(
+    (client) => client.chainId === event.destinationChain
+  );
+  if (!evmClient) return;
 
   const data = await prisma.callContractWithToken.findFirst({
     where: {

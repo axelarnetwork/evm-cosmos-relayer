@@ -9,7 +9,7 @@ import { sleep } from '../utils/utils';
 import { sha256 } from 'ethers/lib/utils';
 import ReconnectingWebSocket from 'reconnecting-websocket';
 import { Subject } from 'rxjs';
-import { ContractCallSubmitted, IBCEvent, IBCPacketEvent } from '../types';
+import { ContractCallSubmitted, ContractCallWithTokenSubmitted, IBCEvent, IBCPacketEvent } from '../types';
 import WebSocket from 'isomorphic-ws';
 import { SigningClient } from '.';
 import {
@@ -143,7 +143,7 @@ export class AxelarClient {
 
   public listenForCosmosContractCallWithToken(
     callContractWithTokenSubject: Subject<
-      IBCEvent<ContractCallWithTokenEventObject>
+      IBCEvent<ContractCallWithTokenSubmitted>
     >
   ) {
     const options = {
