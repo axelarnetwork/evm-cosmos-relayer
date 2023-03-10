@@ -1,0 +1,8 @@
+{
+  "chainId": "devnet-wk",
+  "denom": "uwk",
+  "gasPrice": "0.0125",
+  "rpcUrl": "http://afc5d4a439e4a456bafe34c2d9cd955b-182827533.us-east-2.elb.amazonaws.com:26657",
+  "lcdUrl": "http://afc5d4a439e4a456bafe34c2d9cd955b-182827533.us-east-2.elb.amazonaws.com:1317",
+  "ws": "ws://afc5d4a439e4a456bafe34c2d9cd955b-182827533.us-east-2.elb.amazonaws.com:26657/websocket"
+}

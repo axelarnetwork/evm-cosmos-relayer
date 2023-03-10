@@ -118,7 +118,7 @@ async function main() {
   // ########## Listens for events ##########
 
   for (const listener of listeners) {
-    listener.listenEVM(
+    listener.listenForEvmGMP(
       sEvmCallContractWithToken,
       sEvmApproveContractCallWithToken,
       sEvmApproveContractCall

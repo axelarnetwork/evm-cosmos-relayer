@@ -13,6 +13,7 @@ export const env = {
     'postgresql://postgres:postgres@localhost:5432/relayer',
   PORT: process.env.PORT || 3000,
   DD_API_KEY: process.env.DD_API_KEY || '',
+  CHAIN_ENV: process.env.CHAIN_ENV || 'testnet',
 };
 
 export * from './chains';

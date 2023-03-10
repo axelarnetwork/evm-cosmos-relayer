@@ -101,7 +101,7 @@ export class GMPListenerClient {
     });
   }
 
-  public async listenEVM(
+  public async listenForEvmGMP(
     evmWithTokenObservable: Subject<EvmEvent<ContractCallWithTokenEventObject>>,
     evmApproveWithTokenObservable: Subject<
       EvmEvent<ContractCallApprovedWithMintEventObject>
