@@ -5,6 +5,8 @@ export interface EvmEvent<T> {
   hash: string;
   blockNumber: number;
   logIndex: number;
+  sourceChain: string;
+  destinationChain: string;
   args: T;
 }
 
