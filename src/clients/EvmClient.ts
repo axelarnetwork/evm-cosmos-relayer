@@ -15,6 +15,7 @@ export class EvmClient {
   private gateway: IAxelarGateway;
   private maxRetry: number;
   private retryDelay: number;
+  chainId: string;
 
   constructor(
     chain: EvmNetworkConfig,
@@ -28,6 +29,7 @@ export class EvmClient {
     this.gateway = IAxelarGateway__factory.connect(chain.gateway, this.wallet);
     this.maxRetry = _maxRetry;
     this.retryDelay = _retryDelay;
+    this.chainId = chain.id;
   }
 
   public gatewayExecute(executeData: string) {

@@ -3,7 +3,7 @@ import {
   ContractCallApprovedWithMintEventObject,
   ContractCallWithTokenEventObject,
   EvmClient,
-  config,
+  networks,
   env,
   prisma,
 } from '..';
@@ -32,8 +32,8 @@ export async function handleEvmToCosmosEvent(
   await prisma.relayData.create({
     data: {
       id,
-      from: 'goerli',
-      to: event.args.destinationChain,
+      from: event.sourceChain,
+      to: event.destinationChain,
       callContractWithToken: {
         create: {
           payload: event.args.payload,
@@ -49,7 +49,7 @@ export async function handleEvmToCosmosEvent(
 
   // Sent a confirm tx to testnet-vx
   const confirmTx = await vxClient.confirmEvmTx(
-    config.evm['goerli'].id,
+    event.destinationChain,
     event.hash
   );
   logger.info(
@@ -58,7 +58,7 @@ export async function handleEvmToCosmosEvent(
 
   // Wait for the tx to be confirmed
   await vxClient.pollUntilContractCallWithTokenConfirmed(
-    config.evm['goerli'].id,
+    event.sourceChain,
     `${event.hash}-${event.logIndex}`,
     10000
   );
@@ -93,7 +93,7 @@ export async function handleEvmToCosmosEvent(
 
 export async function handleCosmosToEvmContractCallEvent(
   vxClient: AxelarClient,
-  evmClient: EvmClient,
+  evmClients: EvmClient[],
   event: IBCEvent<ContractCallSubmitted>
 ) {
   await prisma.relayData.create({
@@ -113,12 +113,12 @@ export async function handleCosmosToEvmContractCallEvent(
     },
   });
 
-  await relayTxToEvmGateway(vxClient, evmClient, event);
+  await relayTxToEvmGateway(vxClient, evmClients, event);
 }
 
 export async function handleCosmosToEvmContractCallWithTokenEvent(
   vxClient: AxelarClient,
-  evmClient: EvmClient,
+  evmClients: EvmClient[],
   event: IBCEvent<ContractCallWithTokenSubmitted>
 ) {
   await prisma.relayData.create({
@@ -140,22 +140,30 @@ export async function handleCosmosToEvmContractCallWithTokenEvent(
     },
   });
 
-  await relayTxToEvmGateway(vxClient, evmClient, event);
+  await relayTxToEvmGateway(vxClient, evmClients, event);
 }
 
 async function relayTxToEvmGateway(
   vxClient: AxelarClient,
-  evmClient: EvmClient,
+  evmClients: EvmClient[],
   event: IBCEvent<ContractCallSubmitted>
 ) {
-  const pendingCommands = await vxClient.getPendingCommands(
-    event.args.destinationChain
+  // Find the evm client associated with event's destination chain
+  const evmClient = evmClients.find(
+    (client) => client.chainId === event.args.destinationChain
   );
 
-  logger.info(
-    `[handleCosmosToEvmEvent] PendingCommands: ${JSON.stringify(
-      pendingCommands
-    )}`
+  // If no evm client found, return
+  if(!evmClient) return;
+
+  const pendingCommands = await vxClient.getPendingCommands(
+    event.args.destinationChain
+    );
+
+    logger.info(
+      `[handleCosmosToEvmEvent] PendingCommands: ${JSON.stringify(
+        pendingCommands
+        )}`
   );
   if (pendingCommands.length === 0) return;
 
@@ -167,11 +175,11 @@ async function relayTxToEvmGateway(
   const executeData = await vxClient.getExecuteDataFromBatchCommands(
     event.args.destinationChain,
     batchedCommandId
-  );
+    );
 
-  logger.info(
-    `[handleCosmosToEvmEvent] BatchCommands: ${JSON.stringify(executeData)}`
-  );
+    logger.info(
+      `[handleCosmosToEvmEvent] BatchCommands: ${JSON.stringify(executeData)}`
+      );
 
   const tx = await evmClient.gatewayExecute(executeData);
   if (!tx) return;
@@ -192,9 +200,17 @@ async function relayTxToEvmGateway(
 }
 
 export async function handleCosmosToEvmCallContractCompleteEvent(
-  evmClient: EvmClient,
+  evmClients: EvmClient[],
   event: EvmEvent<ContractCallApprovedEventObject>
 ) {
+  // Find the evm client associated with event's destination chain
+  const evmClient = evmClients.find(
+    (client) => client.chainId === event.args.sourceChain
+  );
+
+  // If no evm client found, return
+  if(!evmClient) return;
+
   const {
     commandId,
     contractAddress,
@@ -253,7 +269,7 @@ export async function handleCosmosToEvmCallContractCompleteEvent(
 }
 
 export async function handleCosmosToEvmCallContractWithTokenCompleteEvent(
-  evmClient: EvmClient,
+  evmClients: EvmClient[],
   event: EvmEvent<ContractCallApprovedWithMintEventObject>
 ) {
   const {
@@ -265,6 +281,9 @@ export async function handleCosmosToEvmCallContractWithTokenCompleteEvent(
     symbol,
     payloadHash,
   } = event.args;
+
+  const client = evmClients.find((client) => client.chainId === event.args.);
+
 
   const data = await prisma.callContractWithToken.findFirst({
     where: {
@@ -339,6 +358,8 @@ export async function handleEvmToCosmosCompleteEvent(
   );
 
   if (env.DEV) {
+    // TODO: Find a way to generalize this check to work with any gmp call.
+
     const recipientAddress = 'axelar199km5vjuu6edyjlwx62wvmr6uqeghyz4rwmyvk';
     client
       .getBalance(

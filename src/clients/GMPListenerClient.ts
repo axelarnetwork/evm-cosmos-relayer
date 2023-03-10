@@ -16,14 +16,20 @@ import {
   ContractCallApprovedWithMintEventObject,
 } from '../types/contracts/IAxelarGateway';
 import { logger } from '../logger';
+import { EvmNetworkConfig } from '../config/types';
 
 export class GMPListenerClient {
-  gatewayContract: IAxelarGateway;
+  private gatewayContract: IAxelarGateway;
   private currentBlock = 0;
+  public chainId: string;
 
-  constructor(rpcUrl: string, gateway: string) {
-    const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
-    this.gatewayContract = IAxelarGateway__factory.connect(gateway, provider);
+  constructor(evm: EvmNetworkConfig) {
+    const provider = new ethers.providers.JsonRpcProvider(evm.rpcUrl);
+    this.gatewayContract = IAxelarGateway__factory.connect(
+      evm.gateway,
+      provider
+    );
+    this.chainId = evm.id;
   }
 
   private async listenCallContractWithToken(
@@ -50,6 +56,8 @@ export class GMPListenerClient {
         hash: event.transactionHash,
         blockNumber: event.blockNumber,
         logIndex: event.logIndex,
+        sourceChain: this.chainId,
+        destinationChain: event.args.destinationChain,
         args: filterEventArgs(event),
       });
     });
@@ -67,6 +75,8 @@ export class GMPListenerClient {
         hash: event.transactionHash,
         blockNumber: event.blockNumber,
         logIndex: event.logIndex,
+        sourceChain: event.args.sourceChain,
+        destinationChain: this.chainId,
         args: filterEventArgs(event),
       });
     });
@@ -84,6 +94,8 @@ export class GMPListenerClient {
         hash: event.transactionHash,
         blockNumber: event.blockNumber,
         logIndex: event.logIndex,
+        sourceChain: event.args.sourceChain,
+        destinationChain: this.chainId,
         args: filterEventArgs(event),
       });
     });
