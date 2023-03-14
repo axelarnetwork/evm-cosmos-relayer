@@ -4,16 +4,12 @@ import {
   IAxelarGateway__factory,
   IAxelarGateway,
 } from '../types/contracts/index';
-export {
-  ContractCallWithTokenEventObject,
-  ContractCallApprovedWithMintEventObject,
-} from '../types/contracts/IAxelarGateway';
 import { EvmEvent } from '../types';
 import { filterEventArgs } from '../utils/filterUtils';
-import { ContractCallWithTokenEventObject } from '.';
 import {
   ContractCallApprovedEventObject,
   ContractCallApprovedWithMintEventObject,
+  ContractCallWithTokenEventObject,
 } from '../types/contracts/IAxelarGateway';
 import { logger } from '../logger';
 import { EvmNetworkConfig } from '../config/types';
