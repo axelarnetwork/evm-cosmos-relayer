@@ -21,7 +21,6 @@ import {
   parseContractCallSubmittedEvent,
   parseContractCallWithTokenSubmittedEvent,
 } from '../utils/parseUtils';
-import { ContractCallWithTokenEventObject } from '../types/contracts/IAxelarGateway';
 import { logger } from '../logger';
 
 export class AxelarClient {
@@ -54,7 +53,7 @@ export class AxelarClient {
     );
     return this.signingClient.broadcast(payload).catch((e: any) => {
       logger.error(
-        `[AxelarClient.confirmEvmTx] Failed to broadcast ${JSON.stringify(e)}`
+        `[AxelarClient.confirmEvmTx] Failed to broadcast ${e.message}`
       );
     });
   }
@@ -75,9 +74,7 @@ export class AxelarClient {
 
     return this.signingClient.broadcast(payload).catch((e: any) => {
       logger.error(
-        `[AxelarClient.signCommands] Failed to broadcast signCommands ${JSON.stringify(
-          e
-        )}`
+        `[AxelarClient.signCommands] Failed to broadcast signCommands ${e.message}`
       );
     });
   }
@@ -113,9 +110,7 @@ export class AxelarClient {
     );
     return this.signingClient.broadcast(_payload).catch((e: any) => {
       logger.error(
-        `[AxelarClient.executeGeneralMessageWithToken] Failed to broadcast ${JSON.stringify(
-          e
-        )}`
+        `[AxelarClient.executeGeneralMessageWithToken] Failed to broadcast ${e.message}`
       );
     });
   }
@@ -274,7 +269,7 @@ export class AxelarClient {
       options
     );
 
-    const topic = `tm.event='Tx' AND acknowledge_packet.packet_dst_port='transfer'`;
+    const topic = `tm.event='Tx' AND message.action='ExecuteMessage'`;
 
     this.ws.send(
       JSON.stringify({
@@ -290,19 +285,21 @@ export class AxelarClient {
 
       // check if the event topic is matched
       if (event.result.query !== topic) return;
+      const packetData = event.result.events['send_packet.packet_data']?.[0];
+      if (!packetData) return;
+      const memo = JSON.parse(packetData).memo;
 
       // parse the event data
       const data = {
         sequence: parseInt(
-          event.result.events['acknowledge_packet.packet_sequence'][0]
+          event.result.events['send_packet.packet_sequence'][0]
         ),
-        amount: event.result.events['fungible_token_packet.amount'][0],
-        denom: event.result.events['fungible_token_packet.denom'][0],
-        destChannel:
-          event.result.events['acknowledge_packet.packet_dst_channel'][0],
-        srcChannel:
-          event.result.events['acknowledge_packet.packet_src_channel'][0],
+        amount: packetData.amount,
+        denom: packetData.denom,
+        destChannel: event.result.events['send_packet.packet_dst_channel'][0],
+        srcChannel: event.result.events['send_packet.packet_src_channel'][0],
         hash: event.result.events['tx.hash'][0],
+        memo,
       };
 
       // emit the event
