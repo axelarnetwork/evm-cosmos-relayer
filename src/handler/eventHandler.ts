@@ -24,27 +24,23 @@ export async function handleEvmToCosmosEvent(
   event: EvmEvent<ContractCallWithTokenEventObject>
 ) {
   const id = `${event.hash}-${event.logIndex}`;
-  await prisma.relayData
-    .create({
-      data: {
-        id,
-        from: event.sourceChain,
-        to: event.destinationChain,
-        callContractWithToken: {
-          create: {
-            payload: event.args.payload,
-            payloadHash: event.args.payloadHash,
-            contractAddress: event.args.destinationContractAddress,
-            sourceAddress: event.args.sender,
-            amount: event.args.amount.toString(),
-            symbol: event.args.symbol,
-          },
+  await prisma.relayData.create({
+    data: {
+      id,
+      from: event.sourceChain,
+      to: event.destinationChain,
+      callContractWithToken: {
+        create: {
+          payload: event.args.payload,
+          payloadHash: event.args.payloadHash,
+          contractAddress: event.args.destinationContractAddress,
+          sourceAddress: event.args.sender,
+          amount: event.args.amount.toString(),
+          symbol: event.args.symbol,
         },
       },
-    })
-    .catch((e) => {
-      console.log('error', e);
-    });
+    },
+  });
 
   // Sent a confirm tx to testnet-vx
   const confirmTx = await vxClient.confirmEvmTx(event.sourceChain, event.hash);
