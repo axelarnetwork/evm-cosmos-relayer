@@ -13,6 +13,7 @@ import {
   EvmEvent,
   IBCEvent,
   IBCPacketEvent,
+  Status,
 } from '../types';
 import {
   ContractCallApprovedEvent,
@@ -81,7 +82,7 @@ export async function handleEvmToCosmosEvent(
       id,
     },
     data: {
-      status: 1,
+      status: Status.APPROVED,
       packetSequence,
     },
   });
@@ -100,7 +101,7 @@ export async function handleCosmosToEvmContractCallEvent(
       id: `${event.args.messageId}`,
       from: event.args.sourceChain,
       to: event.args.destinationChain,
-      status: 0,
+      status: Status.PENDING,
       callContract: {
         create: {
           payload: event.args.payload,
@@ -125,7 +126,7 @@ export async function handleCosmosToEvmContractCallWithTokenEvent(
       id: `${event.args.messageId}`,
       from: event.args.sourceChain,
       to: event.args.destinationChain,
-      status: 0,
+      status: Status.PENDING,
       callContractWithToken: {
         create: {
           payload: event.args.payload,
@@ -190,7 +191,7 @@ async function relayTxToEvmGateway<
     },
     data: {
       executeHash: tx.transactionHash,
-      status: 1,
+      status: Status.APPROVED,
     },
   });
 
@@ -204,7 +205,7 @@ export async function handleCosmosToEvmCallContractCompleteEvent(
   // Find the evm client associated with event's destination chain
   const evmClient = evmClients.find(
     (client) =>
-      client.chainId.toLowerCase() === event.args.sourceChain.toLowerCase()
+      client.chainId.toLowerCase() === event.destinationChain.toLowerCase()
   );
 
   // If no evm client found, return
@@ -225,7 +226,7 @@ export async function handleCosmosToEvmCallContractCompleteEvent(
         sourceAddress,
         contractAddress,
       },
-      status: 1,
+      status: Status.APPROVED,
     },
     orderBy: {
       updatedAt: 'desc',
@@ -242,10 +243,9 @@ export async function handleCosmosToEvmCallContractCompleteEvent(
 
   if (!relayDatas)
     return logger.info(
-      `[handleCosmosToEvmCompleteEvent]: Cannot find payload from given payloadHash: ${payloadHash}`
+      `[handleCosmosToEvmCallContractCompleteEvent]: Cannot find payload from given payloadHash: ${payloadHash}`
     );
 
-  // const { payload, id } = data;
   for (const data of relayDatas) {
     const { callContract, id } = data;
     if (!callContract) continue;
@@ -258,8 +258,27 @@ export async function handleCosmosToEvmCallContractCompleteEvent(
       callContract.payload
     );
 
+    if (!tx) {
+      logger.info([
+        '[handleCosmosToEvmCallContractCompleteEvent] execute failed',
+        id,
+      ]);
+      await prisma.relayData.update({
+        where: {
+          id,
+        },
+        data: {
+          status: Status.FAILED,
+          updatedAt: new Date(),
+        },
+      });
+      continue;
+    }
+
     logger.info(
-      `[handleCosmosToEvmCompleteEvent] execute: ${JSON.stringify(tx)}`
+      `[handleCosmosToEvmCallContractCompleteEvent] execute: ${JSON.stringify(
+        tx
+      )}`
     );
 
     const executeDb = await prisma.relayData.update({
@@ -267,13 +286,15 @@ export async function handleCosmosToEvmCallContractCompleteEvent(
         id,
       },
       data: {
-        status: 2,
+        status: Status.SUCCESS,
         updatedAt: new Date(),
       },
     });
 
     logger.info(
-      `[handleCosmosToEvmCompleteEvent] DBUpdate: ${JSON.stringify(executeDb)}`
+      `[handleCosmosToEvmCallContractCompleteEvent] DBUpdate: ${JSON.stringify(
+        executeDb
+      )}`
     );
   }
 }
@@ -305,7 +326,7 @@ export async function handleCosmosToEvmCallContractWithTokenCompleteEvent(
         contractAddress: contractAddress,
         amount: amount.toString(),
       },
-      status: 1,
+      status: Status.APPROVED,
     },
     orderBy: {
       updatedAt: 'desc',
@@ -339,6 +360,23 @@ export async function handleCosmosToEvmCallContractWithTokenCompleteEvent(
       amount.toString()
     );
 
+    if (!tx) {
+      logger.info([
+        '[handleCosmosToEvmCallContractWithTokenCompleteEvent] executeWithToken failed',
+        id,
+      ]);
+      await prisma.relayData.update({
+        where: {
+          id,
+        },
+        data: {
+          status: Status.FAILED,
+          updatedAt: new Date(),
+        },
+      });
+      continue;
+    }
+
     logger.info(
       `[handleCosmosToEvmCallContractWithTokenCompleteEvent] executeWithToken: ${JSON.stringify(
         tx
@@ -350,7 +388,7 @@ export async function handleCosmosToEvmCallContractWithTokenCompleteEvent(
         id,
       },
       data: {
-        status: 2,
+        status: Status.SUCCESS,
         updatedAt: new Date(),
       },
     });
@@ -373,7 +411,7 @@ export async function handleEvmToCosmosCompleteEvent(
     },
     data: {
       executeHash: event.hash,
-      status: 2,
+      status: Status.SUCCESS,
       updatedAt: new Date(),
     },
   });

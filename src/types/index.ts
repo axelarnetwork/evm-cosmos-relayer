@@ -99,3 +99,10 @@ export interface MsgTransfer {
 
   memo: string;
 }
+
+export enum Status {
+  PENDING = 0,
+  APPROVED = 1,
+  SUCCESS = 2,
+  FAILED = 3,
+}
