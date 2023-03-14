@@ -9,7 +9,12 @@ import { sleep } from '../utils/utils';
 import { sha256 } from 'ethers/lib/utils';
 import ReconnectingWebSocket from 'reconnecting-websocket';
 import { Subject } from 'rxjs';
-import { ContractCallSubmitted, ContractCallWithTokenSubmitted, IBCEvent, IBCPacketEvent } from '../types';
+import {
+  ContractCallSubmitted,
+  ContractCallWithTokenSubmitted,
+  IBCEvent,
+  IBCPacketEvent,
+} from '../types';
 import WebSocket from 'isomorphic-ws';
 import { SigningClient } from '.';
 import {
@@ -24,6 +29,11 @@ export class AxelarClient {
   public ws: ReconnectingWebSocket | undefined;
   public callContractWs: ReconnectingWebSocket | undefined;
   public callContractWithTokenWs: ReconnectingWebSocket | undefined;
+  private wsOptions = {
+    WebSocket, // custom WebSocket constructor
+    connectionTimeout: 30000,
+    maxRetries: 10,
+  };
   public chainId: string;
 
   constructor(_signingClient: SigningClient, id: string) {
@@ -141,17 +151,21 @@ export class AxelarClient {
     }
   }
 
-  public listenForCosmosContractCallWithToken(
+  public listenForCosmosGMP(
+    calltractCallSubject: Subject<IBCEvent<ContractCallSubmitted>>,
+    contractCallWithTokenSubject: Subject<
+      IBCEvent<ContractCallWithTokenSubmitted>
+    >
+  ) {
+    this.listenForCosmosContractCall(calltractCallSubject);
+    this.listenForCosmosContractCallWithToken(contractCallWithTokenSubject);
+  }
+
+  private listenForCosmosContractCallWithToken(
     callContractWithTokenSubject: Subject<
       IBCEvent<ContractCallWithTokenSubmitted>
     >
   ) {
-    const options = {
-      WebSocket, // custom WebSocket constructor
-      connectionTimeout: 30000,
-      maxRetries: 10,
-    };
-
     if (this.callContractWithTokenWs) {
       return this.callContractWithTokenWs.reconnect();
     }
@@ -159,7 +173,7 @@ export class AxelarClient {
     this.callContractWithTokenWs = new ReconnectingWebSocket(
       this.signingClient.config.ws,
       [],
-      options
+      this.wsOptions
     );
 
     const topic = `tm.event='Tx' AND axelar.axelarnet.v1beta1.ContractCallWithTokenSubmitted.message_id EXISTS`;
@@ -198,15 +212,9 @@ export class AxelarClient {
     );
   }
 
-  public listenForCosmosGMP(
+  private listenForCosmosContractCall(
     callContractSubject: Subject<IBCEvent<ContractCallSubmitted>>
   ) {
-    const options = {
-      WebSocket, // custom WebSocket constructor
-      connectionTimeout: 30000,
-      maxRetries: 10,
-    };
-
     if (this.callContractWs) {
       return this.callContractWs.reconnect();
     }
@@ -214,7 +222,7 @@ export class AxelarClient {
     this.callContractWs = new ReconnectingWebSocket(
       this.signingClient.config.ws,
       [],
-      options
+      this.wsOptions
     );
 
     const topic = `tm.event='Tx' AND axelar.axelarnet.v1beta1.ContractCallSubmitted.message_id EXISTS`;
