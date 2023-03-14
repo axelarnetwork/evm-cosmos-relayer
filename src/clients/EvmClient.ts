@@ -15,6 +15,7 @@ export class EvmClient {
   private gateway: IAxelarGateway;
   private maxRetry: number;
   private retryDelay: number;
+  chainId: string;
 
   constructor(
     chain: EvmNetworkConfig,
@@ -28,6 +29,11 @@ export class EvmClient {
     this.gateway = IAxelarGateway__factory.connect(chain.gateway, this.wallet);
     this.maxRetry = _maxRetry;
     this.retryDelay = _retryDelay;
+    this.chainId = chain.id;
+  }
+
+  public getSenderAddress() {
+    return this.wallet.address;
   }
 
   public gatewayExecute(executeData: string) {
@@ -35,7 +41,7 @@ export class EvmClient {
       to: this.gateway.address,
       data: executeData,
     }).catch((e: any) => {
-      logger.error(`[EvmClient.gatewayExecute] Failed ${JSON.stringify(e)}`);
+      logger.error(`[EvmClient.gatewayExecute] Failed ${e.message}`);
       return undefined;
     });
   }
@@ -100,9 +106,10 @@ export class EvmClient {
     return this.wallet
       .sendTransaction(tx)
       .then((t) => t.wait())
-      .catch(async () => {
+      .catch(async (e: any) => {
+        logger.error(`[EvmClient.submitTx] Failed ${e.message}`);
         await sleep(this.retryDelay);
-        logger.info(`Retrying tx: ${retryAttempt}`);
+        logger.info(`Retrying tx: ${retryAttempt + 1}`);
         return this.submitTx(tx, retryAttempt + 1);
       });
   }

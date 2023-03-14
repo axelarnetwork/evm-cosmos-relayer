@@ -1,20 +1,16 @@
-import {
-  AxelarClient,
-  ContractCallApprovedWithMintEventObject,
-  ContractCallWithTokenEventObject,
-  EvmClient,
-  config,
-  env,
-  prisma,
-} from '..';
+import { AxelarClient, EvmClient, env, prisma } from '..';
 import { logger } from '../logger';
 import {
   ContractCallSubmitted,
+  ContractCallWithTokenSubmitted,
   EvmEvent,
   IBCEvent,
   IBCPacketEvent,
+  Status,
 } from '../types';
 import {
+  ContractCallApprovedWithMintEventObject,
+  ContractCallWithTokenEventObject,
   ContractCallApprovedEvent,
   ContractCallApprovedEventObject,
 } from '../types/contracts/IAxelarGateway';
@@ -28,36 +24,37 @@ export async function handleEvmToCosmosEvent(
   event: EvmEvent<ContractCallWithTokenEventObject>
 ) {
   const id = `${event.hash}-${event.logIndex}`;
-  await prisma.relayData.create({
-    data: {
-      id,
-      from: 'goerli',
-      to: event.args.destinationChain,
-      callContractWithToken: {
-        create: {
-          payload: event.args.payload,
-          payloadHash: event.args.payloadHash,
-          contractAddress: event.args.destinationContractAddress,
-          sourceAddress: event.args.sender,
-          amount: event.args.amount.toString(),
-          symbol: event.args.symbol,
+  await prisma.relayData
+    .create({
+      data: {
+        id,
+        from: event.sourceChain,
+        to: event.destinationChain,
+        callContractWithToken: {
+          create: {
+            payload: event.args.payload,
+            payloadHash: event.args.payloadHash,
+            contractAddress: event.args.destinationContractAddress,
+            sourceAddress: event.args.sender,
+            amount: event.args.amount.toString(),
+            symbol: event.args.symbol,
+          },
         },
       },
-    },
-  });
+    })
+    .catch((e) => {
+      console.log('error', e);
+    });
 
   // Sent a confirm tx to testnet-vx
-  const confirmTx = await vxClient.confirmEvmTx(
-    config.evm['goerli'].id,
-    event.hash
-  );
+  const confirmTx = await vxClient.confirmEvmTx(event.sourceChain, event.hash);
   logger.info(
     `[handleEvmToCosmosEvent] Confirmed: ${confirmTx.transactionHash}`
   );
 
   // Wait for the tx to be confirmed
   await vxClient.pollUntilContractCallWithTokenConfirmed(
-    config.evm['goerli'].id,
+    event.sourceChain,
     `${event.hash}-${event.logIndex}`,
     10000
   );
@@ -81,7 +78,7 @@ export async function handleEvmToCosmosEvent(
       id,
     },
     data: {
-      status: 1,
+      status: Status.SUCCESS,
       packetSequence,
     },
   });
@@ -90,17 +87,17 @@ export async function handleEvmToCosmosEvent(
   );
 }
 
-export async function handleCosmosToEvmEvent(
+export async function handleCosmosToEvmContractCallEvent(
   vxClient: AxelarClient,
-  evmClient: EvmClient,
+  evmClients: EvmClient[],
   event: IBCEvent<ContractCallSubmitted>
 ) {
   await prisma.relayData.create({
     data: {
-      id: `${event.hash}-0`,
-      from: 'osmosis-5',
-      to: 'goerli',
-      status: 0,
+      id: `${event.args.messageId}`,
+      from: event.args.sourceChain,
+      to: event.args.destinationChain,
+      status: Status.PENDING,
       callContract: {
         create: {
           payload: event.args.payload,
@@ -111,6 +108,48 @@ export async function handleCosmosToEvmEvent(
       },
     },
   });
+
+  await relayTxToEvmGateway(vxClient, evmClients, event);
+}
+
+export async function handleCosmosToEvmContractCallWithTokenEvent(
+  vxClient: AxelarClient,
+  evmClients: EvmClient[],
+  event: IBCEvent<ContractCallWithTokenSubmitted>
+) {
+  await prisma.relayData.create({
+    data: {
+      id: `${event.args.messageId}`,
+      from: event.args.sourceChain,
+      to: event.args.destinationChain,
+      status: Status.PENDING,
+      callContractWithToken: {
+        create: {
+          payload: event.args.payload,
+          payloadHash: event.args.payloadHash,
+          contractAddress: event.args.contractAddress,
+          sourceAddress: event.args.sender,
+          amount: event.args.amount.toString(),
+          symbol: event.args.symbol,
+        },
+      },
+    },
+  });
+
+  await relayTxToEvmGateway(vxClient, evmClients, event);
+}
+
+async function relayTxToEvmGateway<
+  T extends ContractCallSubmitted | ContractCallWithTokenSubmitted
+>(vxClient: AxelarClient, evmClients: EvmClient[], event: IBCEvent<T>) {
+  // Find the evm client associated with event's destination chain
+  const evmClient = evmClients.find(
+    (client) =>
+      client.chainId.toLowerCase() === event.args.destinationChain.toLowerCase()
+  );
+
+  // If no evm client found, return
+  if (!evmClient) return;
 
   const pendingCommands = await vxClient.getPendingCommands(
     event.args.destinationChain
@@ -144,11 +183,11 @@ export async function handleCosmosToEvmEvent(
   // update relay data
   const record = await prisma.relayData.update({
     where: {
-      id: `${event.hash}`,
+      id: event.args.messageId,
     },
     data: {
       executeHash: tx.transactionHash,
-      status: 1,
+      status: Status.APPROVED,
     },
   });
 
@@ -156,9 +195,18 @@ export async function handleCosmosToEvmEvent(
 }
 
 export async function handleCosmosToEvmCallContractCompleteEvent(
-  evmClient: EvmClient,
+  evmClients: EvmClient[],
   event: EvmEvent<ContractCallApprovedEventObject>
 ) {
+  // Find the evm client associated with event's destination chain
+  const evmClient = evmClients.find(
+    (client) =>
+      client.chainId.toLowerCase() === event.destinationChain.toLowerCase()
+  );
+
+  // If no evm client found, return
+  if (!evmClient) return;
+
   const {
     commandId,
     contractAddress,
@@ -167,57 +215,88 @@ export async function handleCosmosToEvmCallContractCompleteEvent(
     payloadHash,
   } = event.args;
 
-  const data = await prisma.callContract.findFirst({
+  const relayDatas = await prisma.relayData.findMany({
     where: {
-      payloadHash,
-      sourceAddress,
-      contractAddress,
+      callContract: {
+        payloadHash,
+        sourceAddress,
+        contractAddress,
+      },
+      status: Status.APPROVED,
     },
     orderBy: {
       updatedAt: 'desc',
     },
     select: {
-      payload: true,
+      callContract: {
+        select: {
+          payload: true,
+        },
+      },
       id: true,
     },
   });
 
-  if (!data)
+  if (!relayDatas)
     return logger.info(
-      `[handleCosmosToEvmCompleteEvent]: Cannot find payload from given payloadHash: ${payloadHash}`
+      `[handleCosmosToEvmCallContractCompleteEvent]: Cannot find payload from given payloadHash: ${payloadHash}`
     );
 
-  const { payload, id } = data;
+  for (const data of relayDatas) {
+    const { callContract, id } = data;
+    if (!callContract) continue;
 
-  const tx = await evmClient.execute(
-    contractAddress,
-    commandId,
-    sourceChain,
-    sourceAddress,
-    payload
-  );
+    const tx = await evmClient.execute(
+      contractAddress,
+      commandId,
+      sourceChain,
+      sourceAddress,
+      callContract.payload
+    );
 
-  logger.info(
-    `[handleCosmosToEvmCompleteEvent] execute: ${JSON.stringify(tx)}`
-  );
+    if (!tx) {
+      logger.info([
+        '[handleCosmosToEvmCallContractCompleteEvent] execute failed',
+        id,
+      ]);
+      await prisma.relayData.update({
+        where: {
+          id,
+        },
+        data: {
+          status: Status.FAILED,
+          updatedAt: new Date(),
+        },
+      });
+      continue;
+    }
 
-  const executeDb = await prisma.relayData.update({
-    where: {
-      id,
-    },
-    data: {
-      status: 2,
-      updatedAt: new Date(),
-    },
-  });
+    logger.info(
+      `[handleCosmosToEvmCallContractCompleteEvent] execute: ${JSON.stringify(
+        tx
+      )}`
+    );
 
-  logger.info(
-    `[handleCosmosToEvmCompleteEvent] DBUpdate: ${JSON.stringify(executeDb)}`
-  );
+    const executeDb = await prisma.relayData.update({
+      where: {
+        id,
+      },
+      data: {
+        status: Status.SUCCESS,
+        updatedAt: new Date(),
+      },
+    });
+
+    logger.info(
+      `[handleCosmosToEvmCallContractCompleteEvent] DBUpdate: ${JSON.stringify(
+        executeDb
+      )}`
+    );
+  }
 }
 
 export async function handleCosmosToEvmCallContractWithTokenCompleteEvent(
-  evmClient: EvmClient,
+  evmClients: EvmClient[],
   event: EvmEvent<ContractCallApprovedWithMintEventObject>
 ) {
   const {
@@ -230,89 +309,117 @@ export async function handleCosmosToEvmCallContractWithTokenCompleteEvent(
     payloadHash,
   } = event.args;
 
-  const data = await prisma.callContractWithToken.findFirst({
+  const evmClient = evmClients.find(
+    (client) => client.chainId === event.destinationChain
+  );
+  if (!evmClient) return;
+
+  const relayDatas = await prisma.relayData.findMany({
     where: {
-      payloadHash,
-      sourceAddress,
-      contractAddress,
-      amount: amount.toString(),
+      callContractWithToken: {
+        payloadHash: payloadHash,
+        sourceAddress: sourceAddress,
+        contractAddress: contractAddress,
+        amount: amount.toString(),
+      },
+      status: Status.APPROVED,
     },
     orderBy: {
       updatedAt: 'desc',
     },
     select: {
-      payload: true,
+      callContractWithToken: {
+        select: {
+          payload: true,
+        },
+      },
       id: true,
     },
   });
 
-  if (!data)
+  if (!relayDatas)
     return logger.info(
-      `[handleCosmosToEvmCompleteEvent]: Cannot find payload from given payloadHash: ${payloadHash}`
+      `[handleCosmosToEvmCallContractWithTokenCompleteEvent]: Cannot find payload from given payloadHash: ${payloadHash}`
     );
 
-  const { payload, id } = data;
+  for (const relayData of relayDatas) {
+    const { callContractWithToken, id } = relayData;
+    if (!callContractWithToken) continue;
 
-  const tx = await evmClient.executeWithToken(
-    contractAddress,
-    commandId,
-    sourceChain,
-    sourceAddress,
-    payload,
-    symbol,
-    amount.toString()
-  );
+    const tx = await evmClient.executeWithToken(
+      contractAddress,
+      commandId,
+      sourceChain,
+      sourceAddress,
+      callContractWithToken.payload,
+      symbol,
+      amount.toString()
+    );
 
-  logger.info(
-    `[handleCosmosToEvmCompleteEvent] executeWithToken: ${JSON.stringify(tx)}`
-  );
+    if (!tx) {
+      logger.info([
+        '[handleCosmosToEvmCallContractWithTokenCompleteEvent] executeWithToken failed',
+        id,
+      ]);
+      await prisma.relayData.update({
+        where: {
+          id,
+        },
+        data: {
+          status: Status.FAILED,
+          updatedAt: new Date(),
+        },
+      });
+      continue;
+    }
 
-  const executeWithTokenDb = await prisma.relayData.update({
-    where: {
-      id,
-    },
-    data: {
-      status: 2,
-      updatedAt: new Date(),
-    },
-  });
+    logger.info(
+      `[handleCosmosToEvmCallContractWithTokenCompleteEvent] executeWithToken: ${JSON.stringify(
+        tx
+      )}`
+    );
 
-  logger.info(
-    `[handleCosmosToEvmCompleteEvent] DBUpdate: ${JSON.stringify(
-      executeWithTokenDb
-    )}`
-  );
+    const executeWithTokenDb = await prisma.relayData.update({
+      where: {
+        id,
+      },
+      data: {
+        status: Status.SUCCESS,
+        updatedAt: new Date(),
+      },
+    });
+
+    logger.info(
+      `[handleCosmosToEvmCompleteEvent] DBUpdate: ${JSON.stringify(
+        executeWithTokenDb
+      )}`
+    );
+  }
 }
 
 export async function handleEvmToCosmosCompleteEvent(
   client: AxelarClient,
   event: IBCPacketEvent
 ) {
-  const record = await prisma.relayData.update({
-    where: {
-      packetSequence: event.sequence,
-    },
-    data: {
-      executeHash: event.hash,
-      status: 2,
-      updatedAt: new Date(),
-    },
-  });
-  logger.info(
-    `[handleEvmToCosmosCompleteEvent] DBUpdate: ${JSON.stringify(record)}`
-  );
+  // const record = await prisma.relayData
+  //   .update({
+  //     where: {
+  //       packetSequence: event.sequence,
+  //     },
+  //     data: {
+  //       status: Status.SUCCESS,
+  //       executeHash: event.hash,
+  //       updatedAt: new Date(),
+  //     },
+  //   })
+  //   .catch((err: any) => {
+  //     logger.error(`[handleEvmToCosmosCompleteEvent] ${err.message}`);
+  //   });
+  // logger.info(
+  //   `[handleEvmToCosmosCompleteEvent] DBUpdate: ${JSON.stringify(record)}`
+  // );
 
-  if (env.DEV) {
-    const recipientAddress = 'axelar199km5vjuu6edyjlwx62wvmr6uqeghyz4rwmyvk';
-    client
-      .getBalance(
-        recipientAddress,
-        'ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5'
-      )
-      .then((balance) => {
-        logger.info(`Balance: ${JSON.stringify(balance)}`);
-      });
-  }
+  logger.info(`[handleEvmToCosmosCompleteEvent] Memo: ${event.memo}`);
 }
 
 export async function prepareHandler(event: any, label = '') {

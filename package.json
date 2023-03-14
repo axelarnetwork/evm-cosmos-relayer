@@ -10,7 +10,7 @@
     "start:dev": "nodemon --watch 'src/**/*.ts' --exec NODE_ENV=development ts-node src/relay.ts",
     "start:prod": "NODE_ENV=production node dist/relay.js",
     "stop:prod": "pm2 stop relay",
-    "start": "node dist/relay.js",
+    "start": "node dist/src/relay.js",
     "test": "jest",
     "postinstall": "typechain --target ethers-v5 --out-dir src/types/contracts/ src/abi/*.json"
   },

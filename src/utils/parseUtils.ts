@@ -1,8 +1,4 @@
-import { IBCEvent } from '../types';
-import {
-  ContractCallEventObject,
-  ContractCallWithTokenEventObject,
-} from '../types/contracts/IAxelarGateway';
+import { ContractCallWithTokenSubmitted, IBCEvent } from '../types';
 import { ContractCallSubmitted } from '../types';
 import { decodeBase64, removeQuote } from './utils';
 
@@ -40,6 +36,33 @@ export const parseContractCallSubmittedEvent = (
     sourceChain: removeQuote(event[`${key}.source_chain`][0]),
     destinationChain: removeQuote(event[`${key}.destination_chain`][0]),
     contractAddress: removeQuote(event[`${key}.contract_address`][0]),
+    payload: `0x${decodeBase64(removeQuote(event[`${key}.payload`][0]))}`,
+    payloadHash: `0x${decodeBase64(
+      removeQuote(event[`${key}.payload_hash`][0])
+    )}`,
+  };
+
+  return {
+    hash: event['tx.hash'][0],
+    srcChannel: event['write_acknowledgement.packet_src_channel'][0],
+    destChannel: event['write_acknowledgement.packet_dst_channel'][0],
+    args: data,
+  };
+};
+
+export const parseContractCallWithTokenSubmittedEvent = (
+  event: any
+): IBCEvent<ContractCallWithTokenSubmitted> => {
+  const key = 'axelar.axelarnet.v1beta1.ContractCallWithTokenSubmitted';
+  const asset = JSON.parse(event[`${key}.asset`][0]);
+  const data = {
+    messageId: removeQuote(event[`${key}.message_id`][0]),
+    sender: removeQuote(event[`${key}.sender`][0]),
+    sourceChain: removeQuote(event[`${key}.source_chain`][0]),
+    destinationChain: removeQuote(event[`${key}.destination_chain`][0]),
+    contractAddress: removeQuote(event[`${key}.contract_address`][0]),
+    amount: asset.amount.toString(),
+    symbol: asset.denom,
     payload: `0x${decodeBase64(removeQuote(event[`${key}.payload`][0]))}`,
     payloadHash: `0x${decodeBase64(
       removeQuote(event[`${key}.payload_hash`][0])

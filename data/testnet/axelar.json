@@ -1,0 +1,8 @@
+{
+  "chainId": "axelar-testnet",
+  "denom": "uaxl",
+  "gasPrice": "0.0125",
+  "rpcUrl": "https://rpc-axelar-testnet.imperator.co:443",
+  "lcdUrl": "https://axelartest-lcd.quickapi.com",
+  "ws": "wss://axelartest-rpc.quantnode.tech/websocket"
+}

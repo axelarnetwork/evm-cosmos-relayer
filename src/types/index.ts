@@ -5,6 +5,8 @@ export interface EvmEvent<T> {
   hash: string;
   blockNumber: number;
   logIndex: number;
+  sourceChain: string;
+  destinationChain: string;
   args: T;
 }
 
@@ -15,6 +17,7 @@ export interface IBCPacketEvent {
   denom: string;
   amount: string;
   sequence: number;
+  memo: any;
 }
 
 export interface IBCEvent<T> {
@@ -55,6 +58,18 @@ export interface ContractCallSubmitted {
   payloadHash: string;
 }
 
+export interface ContractCallWithTokenSubmitted {
+  messageId: string;
+  sender: string;
+  sourceChain: string;
+  destinationChain: string;
+  contractAddress: string;
+  payload: string;
+  payloadHash: string;
+  symbol: string;
+  amount: string;
+}
+
 export interface MsgTransfer {
   /** the port on which the packet will be sent */
   sourcePort: string;
@@ -84,4 +99,11 @@ export interface MsgTransfer {
   timeoutTimestamp: Long;
 
   memo: string;
+}
+
+export enum Status {
+  PENDING = 0,
+  APPROVED = 1,
+  SUCCESS = 2,
+  FAILED = 3,
 }
