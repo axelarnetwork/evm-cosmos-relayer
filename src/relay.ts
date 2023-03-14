@@ -79,7 +79,7 @@ async function main() {
 
   // Subscribe to the ContractCall event at the axelar network. (Cosmos -> EVM direction)
   sCosmosContractCall.subscribe((event) => {
-    prepareHandler(event, 'handleCosmosToEvmEvent')
+    prepareHandler(event, 'handleContractCallFromCosmosToEvmEvent')
       .then(() =>
         handleCosmosToEvmContractCallEvent(axelarClient, evmClients, event)
       )
@@ -88,7 +88,7 @@ async function main() {
 
   // Subscribe to the ContractCallWithToken event at the axelar network. (Cosmos -> EVM direction)
   sCosmosContractCallWithToken.subscribe((event) => {
-    prepareHandler(event, 'handleCosmosToEvmEvent')
+    prepareHandler(event, 'handleContractCallWithTokenFromCosmosToEvmEvent')
       .then(() =>
         handleCosmosToEvmContractCallWithTokenEvent(
           axelarClient,
@@ -101,18 +101,18 @@ async function main() {
 
   // Subscribe to the ContractCallApprovedWithMint event at the gateway contract. (Cosmos -> EVM direction)
   sEvmApproveContractCallWithToken.subscribe((event) => {
-    prepareHandler(event, 'handleCosmosToEvmCompleteEvent')
+    prepareHandler(event, 'handleCosmosToEvmCallContractWithTokenCompleteEvent')
       .then(() =>
         handleCosmosToEvmCallContractWithTokenCompleteEvent(evmClients, event)
       )
-      .catch((e) => handleAnyError('handleCosmosToEvmCompleteEvent', e));
+      .catch((e) => handleAnyError('handleCosmosToEvmCallContractWithTokenCompleteEvent', e));
   });
 
   // Subscribe to the ContractCallApproved event at the gateway contract. (Cosmos -> EVM direction)
   sEvmApproveContractCall.subscribe((event) => {
-    prepareHandler(event, 'handleCosmosToEvmCompleteEvent')
+    prepareHandler(event, 'handleCosmosToEvmCallContractCompleteEvent')
       .then(() => handleCosmosToEvmCallContractCompleteEvent(evmClients, event))
-      .catch((e) => handleAnyError('handleCosmosToEvmCompleteEvent', e));
+      .catch((e) => handleAnyError('handleCosmosToEvmCallContractCompleteEvent', e));
   });
 
   // ########## Listens for events ##########
@@ -125,7 +125,10 @@ async function main() {
     );
   }
 
-  axelarClient.listenForCosmosGMP(sCosmosContractCall);
+  axelarClient.listenForCosmosGMP(
+    sCosmosContractCall,
+    sCosmosContractCallWithToken
+  );
   axelarClient.listenForIBCComplete(sCosmosApproveAny);
 }
 
