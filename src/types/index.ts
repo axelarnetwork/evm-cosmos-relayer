@@ -17,6 +17,7 @@ export interface IBCPacketEvent {
   denom: string;
   amount: string;
   sequence: number;
+  memo: any;
 }
 
 export interface IBCEvent<T> {

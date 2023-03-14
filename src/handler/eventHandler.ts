@@ -1,11 +1,4 @@
-import {
-  AxelarClient,
-  ContractCallApprovedWithMintEventObject,
-  ContractCallWithTokenEventObject,
-  EvmClient,
-  env,
-  prisma,
-} from '..';
+import { AxelarClient, EvmClient, env, prisma } from '..';
 import { logger } from '../logger';
 import {
   ContractCallSubmitted,
@@ -16,6 +9,8 @@ import {
   Status,
 } from '../types';
 import {
+  ContractCallApprovedWithMintEventObject,
+  ContractCallWithTokenEventObject,
   ContractCallApprovedEvent,
   ContractCallApprovedEventObject,
 } from '../types/contracts/IAxelarGateway';
@@ -29,29 +24,30 @@ export async function handleEvmToCosmosEvent(
   event: EvmEvent<ContractCallWithTokenEventObject>
 ) {
   const id = `${event.hash}-${event.logIndex}`;
-  await prisma.relayData.create({
-    data: {
-      id,
-      from: event.sourceChain,
-      to: event.destinationChain,
-      callContractWithToken: {
-        create: {
-          payload: event.args.payload,
-          payloadHash: event.args.payloadHash,
-          contractAddress: event.args.contractAddress,
-          sourceAddress: event.args.sender,
-          amount: event.args.amount.toString(),
-          symbol: event.args.symbol,
+  await prisma.relayData
+    .create({
+      data: {
+        id,
+        from: event.sourceChain,
+        to: event.destinationChain,
+        callContractWithToken: {
+          create: {
+            payload: event.args.payload,
+            payloadHash: event.args.payloadHash,
+            contractAddress: event.args.destinationContractAddress,
+            sourceAddress: event.args.sender,
+            amount: event.args.amount.toString(),
+            symbol: event.args.symbol,
+          },
         },
       },
-    },
-  });
+    })
+    .catch((e) => {
+      console.log('error', e);
+    });
 
   // Sent a confirm tx to testnet-vx
-  const confirmTx = await vxClient.confirmEvmTx(
-    event.destinationChain,
-    event.hash
-  );
+  const confirmTx = await vxClient.confirmEvmTx(event.sourceChain, event.hash);
   logger.info(
     `[handleEvmToCosmosEvent] Confirmed: ${confirmTx.transactionHash}`
   );
@@ -82,7 +78,7 @@ export async function handleEvmToCosmosEvent(
       id,
     },
     data: {
-      status: Status.APPROVED,
+      status: Status.SUCCESS,
       packetSequence,
     },
   });
@@ -405,33 +401,25 @@ export async function handleEvmToCosmosCompleteEvent(
   client: AxelarClient,
   event: IBCPacketEvent
 ) {
-  const record = await prisma.relayData.update({
-    where: {
-      packetSequence: event.sequence,
-    },
-    data: {
-      executeHash: event.hash,
-      status: Status.SUCCESS,
-      updatedAt: new Date(),
-    },
-  });
-  logger.info(
-    `[handleEvmToCosmosCompleteEvent] DBUpdate: ${JSON.stringify(record)}`
-  );
+  // const record = await prisma.relayData
+  //   .update({
+  //     where: {
+  //       packetSequence: event.sequence,
+  //     },
+  //     data: {
+  //       status: Status.SUCCESS,
+  //       executeHash: event.hash,
+  //       updatedAt: new Date(),
+  //     },
+  //   })
+  //   .catch((err: any) => {
+  //     logger.error(`[handleEvmToCosmosCompleteEvent] ${err.message}`);
+  //   });
+  // logger.info(
+  //   `[handleEvmToCosmosCompleteEvent] DBUpdate: ${JSON.stringify(record)}`
+  // );
 
-  if (env.DEV) {
-    // TODO: Find a way to generalize this check to work with any gmp call.
-
-    const recipientAddress = 'axelar199km5vjuu6edyjlwx62wvmr6uqeghyz4rwmyvk';
-    client
-      .getBalance(
-        recipientAddress,
-        'ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5'
-      )
-      .then((balance) => {
-        logger.info(`Balance: ${JSON.stringify(balance)}`);
-      });
-  }
+  logger.info(`[handleEvmToCosmosCompleteEvent] Memo: ${event.memo}`);
 }
 
 export async function prepareHandler(event: any, label = '') {
