@@ -32,12 +32,16 @@ export class EvmClient {
     this.chainId = chain.id;
   }
 
+  public getSenderAddress() {
+    return this.wallet.address;
+  }
+
   public gatewayExecute(executeData: string) {
     return this.submitTx({
       to: this.gateway.address,
       data: executeData,
     }).catch((e: any) => {
-      logger.error(`[EvmClient.gatewayExecute] Failed ${JSON.stringify(e)}`);
+      logger.error(`[EvmClient.gatewayExecute] Failed ${e.message}`);
       return undefined;
     });
   }
@@ -102,9 +106,10 @@ export class EvmClient {
     return this.wallet
       .sendTransaction(tx)
       .then((t) => t.wait())
-      .catch(async () => {
+      .catch(async (e: any) => {
+        logger.error(`[EvmClient.submitTx] Failed ${e.message}`);
         await sleep(this.retryDelay);
-        logger.info(`Retrying tx: ${retryAttempt}`);
+        logger.info(`Retrying tx: ${retryAttempt + 1}`);
         return this.submitTx(tx, retryAttempt + 1);
       });
   }
