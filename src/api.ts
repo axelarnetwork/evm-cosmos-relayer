@@ -169,6 +169,7 @@ export const initServer = async () => {
         relayer: true,
         hermes: hermesAlive,
         db: dbAlive,
+        chainEnv: env.CHAIN_ENV,
       };
     },
   });
