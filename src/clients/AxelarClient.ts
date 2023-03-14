@@ -9,25 +9,40 @@ import { sleep } from '../utils/utils';
 import { sha256 } from 'ethers/lib/utils';
 import ReconnectingWebSocket from 'reconnecting-websocket';
 import { Subject } from 'rxjs';
-import { IBCEvent, IBCPacketEvent } from '../types';
+import {
+  ContractCallSubmitted,
+  ContractCallWithTokenSubmitted,
+  IBCEvent,
+  IBCPacketEvent,
+} from '../types';
 import WebSocket from 'isomorphic-ws';
 import { SigningClient } from '.';
-import { parseGMPEvent } from '../utils/parseUtils';
-import { ContractCallWithTokenEventObject } from '../types/contracts/IAxelarGateway';
+import {
+  parseContractCallSubmittedEvent,
+  parseContractCallWithTokenSubmittedEvent,
+} from '../utils/parseUtils';
 import { logger } from '../logger';
 
 export class AxelarClient {
   public signingClient: SigningClient;
   public ws: ReconnectingWebSocket | undefined;
-  public gmpWs: ReconnectingWebSocket | undefined;
+  public callContractWs: ReconnectingWebSocket | undefined;
+  public callContractWithTokenWs: ReconnectingWebSocket | undefined;
+  private wsOptions = {
+    WebSocket, // custom WebSocket constructor
+    connectionTimeout: 30000,
+    maxRetries: 10,
+  };
+  public chainId: string;
 
-  constructor(_signingClient: SigningClient) {
+  constructor(_signingClient: SigningClient, id: string) {
     this.signingClient = _signingClient;
+    this.chainId = id;
   }
 
-  static async init(_config?: CosmosNetworkConfig) {
+  static async init(_config: CosmosNetworkConfig) {
     const signingClient = await SigningClient.init(_config);
-    return new AxelarClient(signingClient);
+    return new AxelarClient(signingClient, _config.chainId);
   }
 
   public confirmEvmTx(chain: string, txHash: string) {
@@ -38,7 +53,7 @@ export class AxelarClient {
     );
     return this.signingClient.broadcast(payload).catch((e: any) => {
       logger.error(
-        `[AxelarClient.confirmEvmTx] Failed to broadcast ${JSON.stringify(e)}`
+        `[AxelarClient.confirmEvmTx] Failed to broadcast ${e.message}`
       );
     });
   }
@@ -56,9 +71,10 @@ export class AxelarClient {
       this.signingClient.getAddress(),
       chain
     );
+
     return this.signingClient.broadcast(payload).catch((e: any) => {
       logger.error(
-        `[AxelarClient.signCommands] Failed to broadcast ${JSON.stringify(e)}`
+        `[AxelarClient.signCommands] Failed to broadcast signCommands ${e.message}`
       );
     });
   }
@@ -78,7 +94,7 @@ export class AxelarClient {
       });
     }
 
-    return '0x' + response.executeData;
+    return `0x${response.executeData}`;
   }
 
   public async executeGeneralMessageWithToken(
@@ -94,9 +110,7 @@ export class AxelarClient {
     );
     return this.signingClient.broadcast(_payload).catch((e: any) => {
       logger.error(
-        `[AxelarClient.executeGeneralMessageWithToken] Failed to broadcast ${JSON.stringify(
-          e
-        )}`
+        `[AxelarClient.executeGeneralMessageWithToken] Failed to broadcast ${e.message}`
       );
     });
   }
@@ -133,28 +147,33 @@ export class AxelarClient {
   }
 
   public listenForCosmosGMP(
-    subject: Subject<IBCEvent<ContractCallWithTokenEventObject>>
+    calltractCallSubject: Subject<IBCEvent<ContractCallSubmitted>>,
+    contractCallWithTokenSubject: Subject<
+      IBCEvent<ContractCallWithTokenSubmitted>
+    >
   ) {
-    // Debugging Purpose: Logging balance update
-    const options = {
-      WebSocket, // custom WebSocket constructor
-      connectionTimeout: 1000,
-      maxRetries: 10,
-    };
+    this.listenForCosmosContractCall(calltractCallSubject);
+    this.listenForCosmosContractCallWithToken(contractCallWithTokenSubject);
+  }
 
-    if (this.gmpWs) {
-      return this.gmpWs.reconnect();
+  private listenForCosmosContractCallWithToken(
+    callContractWithTokenSubject: Subject<
+      IBCEvent<ContractCallWithTokenSubmitted>
+    >
+  ) {
+    if (this.callContractWithTokenWs) {
+      return this.callContractWithTokenWs.reconnect();
     }
 
-    this.gmpWs = new ReconnectingWebSocket(
+    this.callContractWithTokenWs = new ReconnectingWebSocket(
       this.signingClient.config.ws,
       [],
-      options
+      this.wsOptions
     );
 
-    const topic = `tm.event='Tx' AND axelar.axelarnet.v1beta1.GeneralMessageApprovedWithToken.source_chain EXISTS`;
+    const topic = `tm.event='Tx' AND axelar.axelarnet.v1beta1.ContractCallWithTokenSubmitted.message_id EXISTS`;
 
-    this.gmpWs.send(
+    this.callContractWithTokenWs.send(
       JSON.stringify({
         jsonrpc: '2.0',
         id: 1,
@@ -162,7 +181,57 @@ export class AxelarClient {
         params: [topic],
       })
     );
-    this.gmpWs.addEventListener('message', (ev: MessageEvent<any>) => {
+
+    this.callContractWithTokenWs.addEventListener(
+      'message',
+      (ev: MessageEvent<any>) => {
+        // convert buffer to json
+        const event = JSON.parse(ev.data.toString());
+
+        // check if the event topic is matched
+        if (!event.result || event.result.query !== topic) return;
+
+        // parse the event data
+        try {
+          const data = parseContractCallWithTokenSubmittedEvent(
+            event.result.events
+          );
+
+          callContractWithTokenSubject.next(data);
+        } catch (e) {
+          logger.error(
+            `[AxelarClient.listenForCosmosContractCallWithToken] Error parsing GMP event: ${e}`
+          );
+        }
+      }
+    );
+  }
+
+  private listenForCosmosContractCall(
+    callContractSubject: Subject<IBCEvent<ContractCallSubmitted>>
+  ) {
+    if (this.callContractWs) {
+      return this.callContractWs.reconnect();
+    }
+
+    this.callContractWs = new ReconnectingWebSocket(
+      this.signingClient.config.ws,
+      [],
+      this.wsOptions
+    );
+
+    const topic = `tm.event='Tx' AND axelar.axelarnet.v1beta1.ContractCallSubmitted.message_id EXISTS`;
+
+    this.callContractWs.send(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'subscribe',
+        params: [topic],
+      })
+    );
+
+    this.callContractWs.addEventListener('message', (ev: MessageEvent<any>) => {
       // convert buffer to json
       const event = JSON.parse(ev.data.toString());
 
@@ -170,9 +239,15 @@ export class AxelarClient {
       if (!event.result || event.result.query !== topic) return;
 
       // parse the event data
-      const data = parseGMPEvent(event.result.events);
+      try {
+        const data = parseContractCallSubmittedEvent(event.result.events);
 
-      subject.next(data);
+        callContractSubject.next(data);
+      } catch (e) {
+        logger.error(
+          `[AxelarClient.listenForCosmosGMP] Error parsing GMP event: ${e}`
+        );
+      }
     });
   }
 
@@ -194,7 +269,7 @@ export class AxelarClient {
       options
     );
 
-    const topic = `tm.event='Tx' AND acknowledge_packet.packet_dst_port='transfer'`;
+    const topic = `tm.event='Tx' AND message.action='ExecuteMessage'`;
 
     this.ws.send(
       JSON.stringify({
@@ -210,19 +285,21 @@ export class AxelarClient {
 
       // check if the event topic is matched
       if (event.result.query !== topic) return;
+      const packetData = event.result.events['send_packet.packet_data']?.[0];
+      if (!packetData) return;
+      const memo = JSON.parse(packetData).memo;
 
       // parse the event data
       const data = {
         sequence: parseInt(
-          event.result.events['acknowledge_packet.packet_sequence'][0]
+          event.result.events['send_packet.packet_sequence'][0]
         ),
-        amount: event.result.events['fungible_token_packet.amount'][0],
-        denom: event.result.events['fungible_token_packet.denom'][0],
-        destChannel:
-          event.result.events['acknowledge_packet.packet_dst_channel'][0],
-        srcChannel:
-          event.result.events['acknowledge_packet.packet_src_channel'][0],
+        amount: packetData.amount,
+        denom: packetData.denom,
+        destChannel: event.result.events['send_packet.packet_dst_channel'][0],
+        srcChannel: event.result.events['send_packet.packet_src_channel'][0],
         hash: event.result.events['tx.hash'][0],
+        memo,
       };
 
       // emit the event

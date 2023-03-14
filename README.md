@@ -1,6 +1,6 @@
 # EVM to Cosmos Relayer
 
-A relayer between cosmos and evm chains on Axelar devnet.
+A relayer between cosmos and evm chains on Axelar testnet.
 
 ## How to run?
 
@@ -15,7 +15,8 @@ Make sure docker engine is running. We use docker for spin up local postgres db.
 1. Copy `.env.example` to `.env` and fill all values.
 2. Run `yarn`
 3. Run `make up` to run postgres db container.
-4. Wait until the db is ready to accept connection, then run `yarn start:dev` to start the relayer.
+4. Run `make prisma-push` to create database and tables.
+5. Wait until the db is ready to accept connection, then run `yarn start:dev` to start the relayer.
 
 ## API
 

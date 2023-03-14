@@ -38,7 +38,7 @@ if (process.env.NODE_ENV === 'production') {
     const relayerFormat = combine(label({ label: 'relayer' }), ...baseFormats);
     const httpTransportOptions = {
       host: 'http-intake.logs.datadoghq.com',
-      path: `/api/v2/logs?dd-api-key=${env.DD_API_KEY}&ddsource=nodejs&service=evm-cosmos-relayer-devnet`,
+      path: `/api/v2/logs?dd-api-key=${env.DD_API_KEY}&ddsource=nodejs&service=evm-cosmos-relayer-testnet`,
       ssl: true,
     };
     logger.info(JSON.stringify(httpTransportOptions));

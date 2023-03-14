@@ -1,85 +1,135 @@
-import { GMPListenerClient, AxelarClient, EvmClient } from './clients';
-import { config } from './config';
 import { Subject, filter } from 'rxjs';
-import { EvmEvent, IBCEvent, IBCPacketEvent } from './types';
+import { GMPListenerClient, AxelarClient, EvmClient } from './clients';
+import { axelarChain, cosmosChains, evmChains } from './config';
 import {
-  ContractCallApprovedWithMintEventObject,
+  ContractCallSubmitted,
+  ContractCallWithTokenSubmitted,
+  IBCPacketEvent,
+} from './types';
+import {
+  ContractCallEventObject,
+  ContractCallApprovedEventObject,
   ContractCallWithTokenEventObject,
+  ContractCallApprovedWithMintEventObject,
 } from './types/contracts/IAxelarGateway';
 import {
   handleAnyError,
   handleEvmToCosmosCompleteEvent,
-  handleCosmosToEvmCompleteEvent,
-  handleCosmosToEvmEvent,
+  handleCosmosToEvmCallContractWithTokenCompleteEvent,
+  handleCosmosToEvmContractCallEvent,
   handleEvmToCosmosEvent,
+  handleCosmosToEvmCallContractCompleteEvent,
+  handleCosmosToEvmContractCallWithTokenEvent,
   prepareHandler,
 } from './handler';
 import { initServer } from './api';
 import { logger } from './logger';
+import { createCosmosEventSubject, createEvmEventSubject } from './subject';
+
+const sEvmCallContractWithToken =
+  createEvmEventSubject<ContractCallWithTokenEventObject>();
+
+const sEvmCallContract = createEvmEventSubject<ContractCallEventObject>();
+
+const sEvmApproveContractCallWithToken =
+  createEvmEventSubject<ContractCallApprovedWithMintEventObject>();
+
+const sEvmApproveContractCall =
+  createEvmEventSubject<ContractCallApprovedEventObject>();
+
+const sCosmosContractCall = createCosmosEventSubject<ContractCallSubmitted>();
+
+const sCosmosContractCallWithToken =
+  createCosmosEventSubject<ContractCallWithTokenSubmitted>();
+
+// Listening to the IBC packet event. This mean the any gmp flow (both contractCall and contractCallWithToken) from evm -> cosmos is completed.
+const sCosmosApproveAny = new Subject<IBCPacketEvent>();
 
 async function main() {
-  const evm = config.evm['ganache-0'];
-  const observedDestinationChains = [config.cosmos.demo.chainId, config.cosmos.osmosis.chainId];
-  const listener = new GMPListenerClient(evm.rpcUrl, evm.gateway);
-  const evmClient = new EvmClient(evm);
-  const vxClient = await AxelarClient.init(config.cosmos.devnet);
-  const demoClient = await AxelarClient.init(config.cosmos.demo);
-  const osmoClient = await AxelarClient.init(config.cosmos.osmosis);
-
-  // Create an event subject for ContractCallWithTokenListenerEvent
-  const evmWithTokenObservable = new Subject<
-    EvmEvent<ContractCallWithTokenEventObject>
-  >();
-  const evmApproveWithTokenObservable = new Subject<
-    EvmEvent<ContractCallApprovedWithMintEventObject>
-  >();
-  const cosmosWithTokenObservable = new Subject<
-    IBCEvent<ContractCallWithTokenEventObject>
-  >();
-  const cosmosCompleteObservable = new Subject<IBCPacketEvent>();
+  const listeners = evmChains.map((evm) => new GMPListenerClient(evm));
+  const axelarClient = await AxelarClient.init(axelarChain);
+  const evmClients = evmChains.map((evm) => new EvmClient(evm));
+  const cosmosClients = cosmosChains.map((cosmos) => AxelarClient.init(cosmos));
 
   /** ######## Handle events ########## */
-  evmWithTokenObservable
+
+  // Subscribe to the ContractCallWithToken event at the gateway contract (EVM -> Cosmos direction)
+  // Filter the event by the supported cosmos chains. This is to avoid conflict with existing relayers that relay to evm chains.
+  sEvmCallContractWithToken
     .pipe(
       filter((event) =>
-        observedDestinationChains.includes(event.args.destinationChain)
+        cosmosChains
+          .map((chain) => chain.chainId)
+          .includes(event.args.destinationChain)
       )
     )
     .subscribe((event) => {
       prepareHandler(event, 'handleEvmToCosmosEvent')
-        .then(() => handleEvmToCosmosEvent(vxClient, event))
+        .then(() => handleEvmToCosmosEvent(axelarClient, event))
         .catch((e) => handleAnyError('handleEvmToCosmosEvent', e));
     });
 
-  evmApproveWithTokenObservable.subscribe((event) => {
-    prepareHandler(event, 'handleCosmosToEvmCompleteEvent')
-      .then(() => handleCosmosToEvmCompleteEvent(evmClient, event))
-      .catch((e) => handleAnyError('handleCosmosToEvmCompleteEvent', e));
+  // Subscribe to the IBCComplete event at the axelar network. (EVM -> Cosmos direction)
+  // This mean the gmp flow is completed.
+  sCosmosApproveAny.subscribe((event) => {
+    prepareHandler(event, 'handleEvmToCosmosCompleteEvent')
+      .then(() => handleEvmToCosmosCompleteEvent(axelarClient, event))
+      .catch((e) => handleAnyError('handleEvmToCosmosCompleteEvent', e));
   });
 
-  cosmosWithTokenObservable.subscribe((event) => {
-    prepareHandler(event, 'handleCosmosToEvmEvent')
-      .then(() => handleCosmosToEvmEvent(vxClient, evmClient, event))
+  // Subscribe to the ContractCall event at the axelar network. (Cosmos -> EVM direction)
+  sCosmosContractCall.subscribe((event) => {
+    prepareHandler(event, 'handleContractCallFromCosmosToEvmEvent')
+      .then(() =>
+        handleCosmosToEvmContractCallEvent(axelarClient, evmClients, event)
+      )
       .catch((e) => handleAnyError('handleCosmosToEvmEvent', e));
   });
 
-  cosmosCompleteObservable.subscribe((event) => {
-    prepareHandler(event, 'handleEvmToCosmosCompleteEvent')
-      .then(() => handleEvmToCosmosCompleteEvent(demoClient, event))
-      .catch((e) => handleAnyError('handleEvmToCosmosCompleteEvent', e));
+  // Subscribe to the ContractCallWithToken event at the axelar network. (Cosmos -> EVM direction)
+  sCosmosContractCallWithToken.subscribe((event) => {
+    prepareHandler(event, 'handleContractCallWithTokenFromCosmosToEvmEvent')
+      .then(() =>
+        handleCosmosToEvmContractCallWithTokenEvent(
+          axelarClient,
+          evmClients,
+          event
+        )
+      )
+      .catch((e) => handleAnyError('handleCosmosToEvmEvent', e));
   });
 
-  cosmosCompleteObservable.subscribe((event) => {
-    prepareHandler(event, 'handleEvmToCosmosCompleteEvent')
-      .then(() => handleEvmToCosmosCompleteEvent(osmoClient, event))
-      .catch((e) => handleAnyError('handleEvmToCosmosCompleteEvent', e));
+  // Subscribe to the ContractCallApprovedWithMint event at the gateway contract. (Cosmos -> EVM direction)
+  sEvmApproveContractCallWithToken.subscribe((event) => {
+    prepareHandler(event, 'handleCosmosToEvmCallContractWithTokenCompleteEvent')
+      .then(() =>
+        handleCosmosToEvmCallContractWithTokenCompleteEvent(evmClients, event)
+      )
+      .catch((e) => handleAnyError('handleCosmosToEvmCallContractWithTokenCompleteEvent', e));
+  });
+
+  // Subscribe to the ContractCallApproved event at the gateway contract. (Cosmos -> EVM direction)
+  sEvmApproveContractCall.subscribe((event) => {
+    prepareHandler(event, 'handleCosmosToEvmCallContractCompleteEvent')
+      .then(() => handleCosmosToEvmCallContractCompleteEvent(evmClients, event))
+      .catch((e) => handleAnyError('handleCosmosToEvmCallContractCompleteEvent', e));
   });
 
   // ########## Listens for events ##########
-  // listen for events on cosmos and evm
-  listener.listenEVM(evmWithTokenObservable, evmApproveWithTokenObservable);
-  vxClient.listenForCosmosGMP(cosmosWithTokenObservable);
-  vxClient.listenForIBCComplete(cosmosCompleteObservable);
+
+  for (const listener of listeners) {
+    listener.listenForEvmGMP(
+      sEvmCallContractWithToken,
+      sEvmApproveContractCallWithToken,
+      sEvmApproveContractCall
+    );
+  }
+
+  axelarClient.listenForCosmosGMP(
+    sCosmosContractCall,
+    sCosmosContractCallWithToken
+  );
+  axelarClient.listenForIBCComplete(sCosmosApproveAny);
 }
 
 logger.info('Starting relayer server...');

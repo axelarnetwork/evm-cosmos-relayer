@@ -2,7 +2,7 @@ import hapi, { Request } from '@hapi/hapi';
 import { env, prisma } from './index';
 import Joi from 'joi';
 import fetch from 'node-fetch';
-import { PaginationParams } from './types';
+import { PaginationParams, Status } from './types';
 import { PrismaClient } from '@prisma/client';
 import { apiLogger } from './logger';
 import Inert from '@hapi/inert';
@@ -66,6 +66,7 @@ export const initServer = async () => {
         },
         include: {
           callContractWithToken: true,
+          callContract: true,
         },
       });
 
@@ -99,6 +100,7 @@ export const initServer = async () => {
           limit: Joi.number().integer().min(1).max(100).default(10),
           include: {
             callContractWithToken: Joi.boolean().default(false),
+            callContract: Joi.boolean().default(false),
           },
           orderBy: Joi.object()
             .keys({
@@ -117,11 +119,11 @@ export const initServer = async () => {
 
       const filtering = completed
         ? {
-            status: 2,
+            status: Status.SUCCESS,
           }
         : {
             status: {
-              not: 2,
+              not: Status.SUCCESS,
             },
           };
       const data = await prisma.relayData.findMany({
@@ -167,6 +169,7 @@ export const initServer = async () => {
         relayer: true,
         hermes: hermesAlive,
         db: dbAlive,
+        chainEnv: env.CHAIN_ENV,
       };
     },
   });

@@ -1,34 +1,43 @@
-import { task } from "hardhat/config";
-import { cosmos } from "../constant";
+import { task } from 'hardhat/config';
+import { cosmos, ganache } from '../constant';
 
-task("multisend", "Send GMP tx to cosmos")
-  .addPositionalParam("recipient", "Recipient address")
-  .addPositionalParam("amount", "Amount")
+task('multisend', 'Send GMP tx to cosmos')
+  .addPositionalParam('recipient', 'Recipient address')
+  .addPositionalParam('amount', 'Amount')
   .setAction(async (taskArgs, hre) => {
     const { ethers } = hre;
     const [deployer] = await ethers.getSigners();
     const { recipient, amount } = taskArgs;
-    const multisendAddress = "0x873424B4cf0E6AF4d8402ee05Ed7CC324307df47";
+    const multisendAddress = '0x813aDfA0B1Ff21785533f3c3585418e710023FD9';
 
     const multiSend = await ethers.getContractAt(
-      "MultiSend",
+      'MultiSend',
       multisendAddress,
       deployer
     );
 
-    const destinationChain = cosmos.name;
-    const destAddress = "axelar16rdjmg0ddsy6tg2m945uyj8jnltk4tpw22quxg";
+    const destinationChain = hre.network.name === 'ganache0' ? "osmo-test-4" : "osmosis-5";
+    const destAddress =
+      'osmo1t20627jap26tak0nyrjzq0pajks36atf6rs475wvnpprr4pd2kysaxz2nj';
     const receivers = [recipient, recipient];
-    const symbol = "axlUSDA";
-    const usdaAddress = "0x392B0A115101CC66241bC4180B000EaCEB8e31e3";
+    const symbol = 'axlUSDA';
+
+    const gateway = new ethers.Contract(
+      ganache.gateway,
+      [
+        'function tokenAddresses(string memory symbol) external view returns (address)',
+      ],
+      deployer
+    );
+    const usdaAddress = await gateway.tokenAddresses(symbol);
 
     const erc20 = new ethers.Contract(
       usdaAddress,
-      ["function approve(address spender, uint256 amount)"],
+      ['function approve(address spender, uint256 amount)'],
       deployer
     );
-    await erc20.approve(multiSend.address, amount).then((tx: any) => tx.wait());
-    console.log("Approved");
+    await erc20.approve(multisendAddress, amount).then((tx: any) => tx.wait());
+    console.log('Approved');
 
     const tx = await multiSend.multiSend(
       destinationChain,
@@ -38,5 +47,5 @@ task("multisend", "Send GMP tx to cosmos")
       amount
     );
 
-    console.log("Sent", tx.hash);
+    console.log('Sent', tx.hash);
   });

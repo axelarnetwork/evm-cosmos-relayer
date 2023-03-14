@@ -1,12 +1,17 @@
 export const evm = {
-  name: "ganache-0",
-  privateKey:
-    "8d5dbff28bef9e96c9324efdff1adaf6fc6c73eaed24d1f9c5038edfad590759",
+  name: 'goerli',
+  rpcUrl: 'https://goerli.infura.io/v3/10de1265f1234c93acfec19ca8f4afd7',
+  gateway: '0xe432150cce91c13a887f7D836923d5597adD8E31',
+  gasService: '0xbE406F0189A0B4cf3A05C286473D23791Dd44Cc6',
+};
+
+export const ganache = {
+  name: 'ganache',
   rpcUrl:
-    "http://a087b4719fc8944a0952490cf1020812-853925870.us-east-2.elb.amazonaws.com:7545",
-  gateway: "0xE720c5C38028Ca08DA47E179162Eca2DD255B6eC",
+    'http://a5c6803b39cd942c3b9daee2847e24fa-1977123350.us-east-2.elb.amazonaws.com:7545',
+  gateway: '0xE720c5C38028Ca08DA47E179162Eca2DD255B6eC',
 };
 
 export const cosmos = {
-  name: "demo-chain",
+  name: 'osmosis-5',
 };

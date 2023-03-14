@@ -1,8 +1,9 @@
 import { CosmosNetworkConfig } from '../config/types';
-import { config as appConfig, env } from '../config';
+import { axelarChain, env } from '../config';
 import { AxelarSigningClient, Environment } from '@axelar-network/axelarjs-sdk';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { StdFee } from '@cosmjs/stargate';
+import { GasPrice } from '@cosmjs/stargate';
 import { MsgTransfer } from '@axelar-network/axelarjs-types/ibc/applications/transfer/v1/tx';
 import {
   AxelarQueryClient,
@@ -16,35 +17,31 @@ export class SigningClient {
   public config: CosmosNetworkConfig;
   public sdk: AxelarSigningClient;
   public queryClient: AxelarQueryClientType;
-  public fee: StdFee;
+  public fee: StdFee | 'auto';
   public maxRetries: number;
   public retryDelay: number;
 
   constructor(
     sdk: AxelarSigningClient,
     client: AxelarQueryClientType,
-    config?: CosmosNetworkConfig,
+    config: CosmosNetworkConfig,
     _maxRetries = env.MAX_RETRY,
     _retryDelay = env.RETRY_DELAY
   ) {
-    this.config = config || appConfig.cosmos.devnet;
+    this.config = config || axelarChain;
     this.sdk = sdk;
     this.queryClient = client;
     this.maxRetries = _maxRetries;
     this.retryDelay = _retryDelay;
-    this.fee = {
-      amount: [
-        {
-          denom: this.config.denom,
-          amount: '1000',
-        },
-      ],
-      gas: '10000000',
-    };
+    this.fee = 'auto';
+    // this.fee = {
+    //   gas: '20000000', // 20M
+    //   amount: [{ denom: config.denom, amount: config.gasPrice }],
+    // };
   }
 
   static async init(_config?: CosmosNetworkConfig) {
-    const config = _config || appConfig.cosmos.devnet;
+    const config = _config || axelarChain;
     const _queryClient = await AxelarQueryClient.initOrGetAxelarQueryClient({
       environment: Environment.DEVNET,
       axelarRpcUrl: config.rpcUrl,
@@ -59,6 +56,7 @@ export class SigningClient {
       },
       options: {
         registry,
+        gasPrice: GasPrice.fromString(`${config.gasPrice}${config.denom}`),
       },
     });
 
