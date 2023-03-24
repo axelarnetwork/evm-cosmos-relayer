@@ -44,7 +44,7 @@ export function getConfirmGatewayTxPayload(
   ];
 }
 
-export function getExecuteGeneralMessageWithTokenPayload(
+export function getExecuteMessageRequest(
   sender: string,
   txHash: string,
   logIndex: number,
@@ -56,7 +56,7 @@ export function getExecuteGeneralMessageWithTokenPayload(
       value: ExecuteMessageRequest.fromPartial({
         sender: toAccAddress(sender),
         payload: fromHex(payload.slice(2)),
-        id: `${txHash}-${logIndex}`,
+        id: logIndex === -1 ? `${txHash}` : `${txHash}-${logIndex}`,
       }),
     },
   ];

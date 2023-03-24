@@ -2,7 +2,7 @@ import { CosmosNetworkConfig } from '../config/types';
 import { StdFee } from '@cosmjs/stargate';
 import {
   getConfirmGatewayTxPayload,
-  getExecuteGeneralMessageWithTokenPayload,
+  getExecuteMessageRequest,
   getSignCommandPayload,
 } from '../utils/payloadBuilder';
 import { sleep } from '../utils/utils';
@@ -97,12 +97,12 @@ export class AxelarClient {
     return `0x${response.executeData}`;
   }
 
-  public async executeGeneralMessageWithToken(
+  public async executeMessageRequest(
     logIndex: number,
     txHash: string,
     payload: string
   ) {
-    const _payload = getExecuteGeneralMessageWithTokenPayload(
+    const _payload = getExecuteMessageRequest(
       this.signingClient.getAddress(),
       txHash,
       logIndex,
@@ -110,7 +110,7 @@ export class AxelarClient {
     );
     return this.signingClient.broadcast(_payload).catch((e: any) => {
       logger.error(
-        `[AxelarClient.executeGeneralMessageWithToken] Failed to broadcast ${e.message}`
+        `[AxelarClient.executeMessageRequest] Failed to broadcast ${e.message}`
       );
     });
   }

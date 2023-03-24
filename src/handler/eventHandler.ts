@@ -58,7 +58,7 @@ export async function handleEvmToCosmosEvent(
   // Sent an execute tx to testnet
   // Check if the tx is already executed
 
-  const executeTx = await vxClient.executeGeneralMessageWithToken(
+  const executeTx = await vxClient.executeMessageRequest(
     event.logIndex,
     event.hash,
     event.args.payload
@@ -146,6 +146,19 @@ async function relayTxToEvmGateway<
 
   // If no evm client found, return
   if (!evmClient) return;
+
+  // TODO: Remove this when it's live on testnet
+  if (env.CHAIN_ENV === 'devnet') {
+    const executeMessage = await vxClient.executeMessageRequest(
+      -1,
+      event.args.messageId,
+      event.args.payload
+    );
+
+    logger.info(
+      `[handleCosmosToEvmEvent] Executed: ${executeMessage.transactionHash}`
+    );
+  }
 
   const pendingCommands = await vxClient.getPendingCommands(
     event.args.destinationChain
