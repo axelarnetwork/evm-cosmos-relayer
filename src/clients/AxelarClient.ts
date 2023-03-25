@@ -22,6 +22,7 @@ import {
   parseContractCallWithTokenSubmittedEvent,
 } from '../utils/parseUtils';
 import { logger } from '../logger';
+import { env } from '..';
 
 export class AxelarClient {
   public signingClient: SigningClient;
@@ -137,12 +138,15 @@ export class AxelarClient {
   public async pollUntilContractCallWithTokenConfirmed(
     chain: string,
     eventId: string,
-    pollingInterval = 1000
+    pollingInterval = 1000,
+    maxRetries = env.MAX_RETRY
   ) {
     let confirmed = false;
-    while (!confirmed) {
+    let retries = 0;
+    while (!confirmed && retries < maxRetries) {
       confirmed = await this.isContractCallWithTokenConfirmed(chain, eventId);
       await sleep(pollingInterval);
+      retries++;
     }
   }
 
