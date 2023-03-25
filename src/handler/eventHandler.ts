@@ -52,7 +52,7 @@ export async function handleEvmToCosmosEvent(
   await vxClient.pollUntilContractCallWithTokenConfirmed(
     event.sourceChain,
     `${event.hash}-${event.logIndex}`,
-    10000
+    3000
   );
 
   // Sent an execute tx to testnet
