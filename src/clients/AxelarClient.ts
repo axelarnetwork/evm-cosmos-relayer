@@ -193,9 +193,7 @@ export class AxelarClient {
     this.callEvmEventCompletedWs.addEventListener(
       'message',
       (ev: MessageEvent<any>) => {
-        // convert buffer to json
         const event = JSON.parse(ev.data.toString());
-        // logger.debug(`Received event: ${JSON.stringify(event, null, 2)}`);
 
         // check if the event topic is matched
         if (!event.result || event.result.query !== topic) return;
