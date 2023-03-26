@@ -19,6 +19,59 @@ import {
   getPacketSequenceFromExecuteTx,
 } from '../utils/parseUtils';
 
+export async function handleEvmToCosmosConfirmEvent(
+  vxClient: AxelarClient,
+  id: string
+) {
+  const data = await prisma.relayData.findUnique({
+    where: {
+      id,
+    },
+    include: {
+      callContractWithToken: true,
+      callContract: true,
+    },
+  });
+  if (!data) {
+    logger.debug(
+      `[handleEvmToCosmosConfirmEvent] Failed to get the data from the DB: ${id}`
+    );
+    return;
+  }
+  const [hash, logIndex] = id.split('-');
+  const payload =
+    data.callContract?.payload || data.callContractWithToken?.payload;
+
+  if (!payload) {
+    logger.debug('Cannot find payload in the DB.');
+    return;
+  }
+
+  const executeTx = await vxClient.executeMessageRequest(
+    parseInt(logIndex),
+    hash,
+    payload
+  );
+  logger.info(
+    `[handleEvmToCosmosEvent] Executed: ${executeTx.transactionHash}`
+  );
+  const packetSequence = getPacketSequenceFromExecuteTx(executeTx);
+
+  // save data to db.
+  const updatedData = await prisma.relayData.update({
+    where: {
+      id,
+    },
+    data: {
+      status: Status.SUCCESS,
+      packetSequence,
+    },
+  });
+  logger.info(
+    `[handleEvmToCosmosEvent] DB Updated: ${JSON.stringify(updatedData)}`
+  );
+}
+
 export async function handleEvmToCosmosEvent(
   vxClient: AxelarClient,
   event: EvmEvent<ContractCallWithTokenEventObject>
@@ -43,44 +96,10 @@ export async function handleEvmToCosmosEvent(
   });
 
   // Sent a confirm tx to testnet-vx
-  const confirmTx = await vxClient.confirmEvmTx(event.sourceChain, event.hash);
-  logger.info(
-    `[handleEvmToCosmosEvent] Confirmed: ${confirmTx.transactionHash}`
-  );
-
-  // Wait for the tx to be confirmed
-  await vxClient.pollUntilContractCallWithTokenConfirmed(
-    event.sourceChain,
-    `${event.hash}-${event.logIndex}`,
-    3000
-  );
-
-  // Sent an execute tx to testnet
-  // Check if the tx is already executed
-
-  const executeTx = await vxClient.executeMessageRequest(
-    event.logIndex,
-    event.hash,
-    event.args.payload
-  );
-  logger.info(
-    `[handleEvmToCosmosEvent] Executed: ${executeTx.transactionHash}`
-  );
-  const packetSequence = getPacketSequenceFromExecuteTx(executeTx);
-
-  // save data to db.
-  const updatedData = await prisma.relayData.update({
-    where: {
-      id,
-    },
-    data: {
-      status: Status.SUCCESS,
-      packetSequence,
-    },
-  });
-  logger.info(
-    `[handleEvmToCosmosEvent] DB Updated: ${JSON.stringify(updatedData)}`
-  );
+  //   const confirmTx = await vxClient.confirmEvmTx(event.sourceChain, event.hash);
+  //   logger.info(
+  //     `[handleEvmToCosmosEvent] Confirmed: ${confirmTx.transactionHash}`
+  //   );
 }
 
 export async function handleCosmosToEvmContractCallEvent(

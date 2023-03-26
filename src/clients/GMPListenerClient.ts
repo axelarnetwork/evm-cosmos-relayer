@@ -44,14 +44,19 @@ export class GMPListenerClient {
     //   logger.info(event.args.destinationChain);
     // });
 
-    this.gatewayContract.on(filter, (...args) => {
+    this.gatewayContract.on(filter, async (...args) => {
       const event = args[7];
       if (event.blockNumber <= this.currentBlock) return;
+
+      const receipt = await event.getTransactionReceipt();
+      const index = receipt.logs.findIndex(
+        (log) => log.logIndex === event.logIndex
+      );
 
       subject.next({
         hash: event.transactionHash,
         blockNumber: event.blockNumber,
-        logIndex: event.logIndex,
+        logIndex: index,
         sourceChain: this.chainId,
         destinationChain: event.args.destinationChain,
         args: filterEventArgs(event),
@@ -63,14 +68,19 @@ export class GMPListenerClient {
     subject: Subject<EvmEvent<ContractCallApprovedWithMintEventObject>>
   ) {
     const filter = this.gatewayContract.filters.ContractCallApprovedWithMint();
-    this.gatewayContract.on(filter, (...args) => {
+    this.gatewayContract.on(filter, async (...args) => {
       const event = args[9];
       if (event.blockNumber <= this.currentBlock) return;
+
+      const receipt = await event.getTransactionReceipt();
+      const index = receipt.logs.findIndex(
+        (log) => log.logIndex === event.logIndex
+      );
 
       subject.next({
         hash: event.transactionHash,
         blockNumber: event.blockNumber,
-        logIndex: event.logIndex,
+        logIndex: index,
         sourceChain: event.args.sourceChain,
         destinationChain: this.chainId,
         args: filterEventArgs(event),
@@ -82,14 +92,19 @@ export class GMPListenerClient {
     subject: Subject<EvmEvent<ContractCallApprovedEventObject>>
   ) {
     const filter = this.gatewayContract.filters.ContractCallApproved();
-    this.gatewayContract.on(filter, (...args) => {
+    this.gatewayContract.on(filter, async (...args) => {
       const event = args[7];
       if (event.blockNumber <= this.currentBlock) return;
+
+      const receipt = await event.getTransactionReceipt();
+      const index = receipt.logs.findIndex(
+        (log) => log.logIndex === event.logIndex
+      );
 
       subject.next({
         hash: event.transactionHash,
         blockNumber: event.blockNumber,
-        logIndex: event.logIndex,
+        logIndex: index,
         sourceChain: event.args.sourceChain,
         destinationChain: this.chainId,
         args: filterEventArgs(event),

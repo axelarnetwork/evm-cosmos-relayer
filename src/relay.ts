@@ -21,6 +21,7 @@ import {
   handleCosmosToEvmCallContractCompleteEvent,
   handleCosmosToEvmContractCallWithTokenEvent,
   prepareHandler,
+  handleEvmToCosmosConfirmEvent,
 } from './handler';
 import { initServer } from './api';
 import { logger } from './logger';
@@ -30,6 +31,8 @@ const sEvmCallContractWithToken =
   createEvmEventSubject<ContractCallWithTokenEventObject>();
 
 const sEvmCallContract = createEvmEventSubject<ContractCallEventObject>();
+
+const sEvmConfirmEvent = new Subject<string>();
 
 const sEvmApproveContractCallWithToken =
   createEvmEventSubject<ContractCallApprovedWithMintEventObject>();
@@ -69,6 +72,12 @@ async function main() {
         .catch((e) => handleAnyError('handleEvmToCosmosEvent', e));
     });
 
+  sEvmConfirmEvent.subscribe((eventId) => {
+    prepareHandler(eventId, 'handleEvmToCosmosConfirmEvent')
+      .then(() => handleEvmToCosmosConfirmEvent(axelarClient, eventId))
+      .catch((e) => handleAnyError('handleEvmToCosmosConfirmEvent', e));
+  });
+
   // Subscribe to the IBCComplete event at the axelar network. (EVM -> Cosmos direction)
   // This mean the gmp flow is completed.
   sCosmosApproveAny.subscribe((event) => {
@@ -105,14 +114,18 @@ async function main() {
       .then(() =>
         handleCosmosToEvmCallContractWithTokenCompleteEvent(evmClients, event)
       )
-      .catch((e) => handleAnyError('handleCosmosToEvmCallContractWithTokenCompleteEvent', e));
+      .catch((e) =>
+        handleAnyError('handleCosmosToEvmCallContractWithTokenCompleteEvent', e)
+      );
   });
 
   // Subscribe to the ContractCallApproved event at the gateway contract. (Cosmos -> EVM direction)
   sEvmApproveContractCall.subscribe((event) => {
     prepareHandler(event, 'handleCosmosToEvmCallContractCompleteEvent')
       .then(() => handleCosmosToEvmCallContractCompleteEvent(evmClients, event))
-      .catch((e) => handleAnyError('handleCosmosToEvmCallContractCompleteEvent', e));
+      .catch((e) =>
+        handleAnyError('handleCosmosToEvmCallContractCompleteEvent', e)
+      );
   });
 
   // ########## Listens for events ##########
@@ -130,6 +143,7 @@ async function main() {
     sCosmosContractCallWithToken
   );
   axelarClient.listenForIBCComplete(sCosmosApproveAny);
+  axelarClient.listenForEvmEventCompleted(sEvmConfirmEvent);
 }
 
 logger.info('Starting relayer server...');
