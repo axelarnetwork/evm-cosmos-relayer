@@ -9,8 +9,9 @@ const myFormat = printf(({ level, message, label, timestamp }) => {
 
 const baseFormats = [timestamp(), prettyPrint()];
 
+const loggerLevel = env.DEV ? 'debug' : 'info';
 export const logger = createLogger({
-  level: 'info',
+  level: loggerLevel,
   format: combine(label({ label: 'relayer' }), ...baseFormats),
   transports: [
     new transports.File({ filename: 'error.log', level: 'error' }),
