@@ -38,7 +38,7 @@ export async function handleEvmToCosmosConfirmEvent(
     );
     return;
   }
-  const [hash, logIndex] = id.split('-');
+  const [hash, eventIndex] = id.split('-');
   const payload =
     data.callContract?.payload || data.callContractWithToken?.payload;
 
@@ -48,7 +48,7 @@ export async function handleEvmToCosmosConfirmEvent(
   }
 
   const executeTx = await vxClient.executeMessageRequest(
-    parseInt(logIndex),
+    parseInt(eventIndex),
     hash,
     payload
   );
@@ -76,7 +76,7 @@ export async function handleEvmToCosmosEvent(
   vxClient: AxelarClient,
   event: EvmEvent<ContractCallWithTokenEventObject>
 ) {
-  const id = `${event.hash}-${event.logIndex}`;
+  const id = `${event.hash}-${event.eventIndex}`;
   await prisma.relayData.create({
     data: {
       id,

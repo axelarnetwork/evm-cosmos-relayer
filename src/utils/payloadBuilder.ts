@@ -47,7 +47,7 @@ export function getConfirmGatewayTxPayload(
 export function getExecuteMessageRequest(
   sender: string,
   txHash: string,
-  logIndex: number,
+  eventIndex: number,
   payload: string
 ) {
   return [
@@ -56,7 +56,7 @@ export function getExecuteMessageRequest(
       value: ExecuteMessageRequest.fromPartial({
         sender: toAccAddress(sender),
         payload: fromHex(payload.slice(2)),
-        id: logIndex === -1 ? `${txHash}` : `${txHash}-${logIndex}`,
+        id: eventIndex === -1 ? `${txHash}` : `${txHash}-${eventIndex}`,
       }),
     },
   ];

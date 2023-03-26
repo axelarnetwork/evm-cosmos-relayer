@@ -101,20 +101,20 @@ export class AxelarClient {
   }
 
   public async executeMessageRequest(
-    logIndex: number,
+    eventIndex: number,
     txHash: string,
     payload: string
   ) {
     const _payload = getExecuteMessageRequest(
       this.signingClient.getAddress(),
       txHash,
-      logIndex,
+      eventIndex,
       payload
     );
     return this.signingClient.broadcast(_payload).catch((e: any) => {
       if (e.message.indexOf('already executed') > -1) {
         logger.error(
-          `[AxelarClient.executeMessageRequest] Already executed ${txHash} - ${logIndex}`
+          `[AxelarClient.executeMessageRequest] Already executed ${txHash} - ${eventIndex}`
         );
       }
       logger.error(

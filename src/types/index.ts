@@ -4,7 +4,7 @@ import { Height } from 'cosmjs-types/ibc/core/client/v1/client';
 export interface EvmEvent<T> {
   hash: string;
   blockNumber: number;
-  logIndex: number;
+  eventIndex: number;
   sourceChain: string;
   destinationChain: string;
   args: T;
