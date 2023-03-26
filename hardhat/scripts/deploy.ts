@@ -1,5 +1,5 @@
 import { ethers } from 'hardhat';
-import { evm } from '../constant';
+import { avalanche, evm } from '../constant';
 
 async function main() {
   const MultiSend = await ethers.getContractFactory('MultiSend');
@@ -14,7 +14,10 @@ async function main() {
 
 async function deployOsmosis() {
   const OsmosisTest = await ethers.getContractFactory('OsmosisTest');
-  const osmosisTest = await OsmosisTest.deploy(evm.gateway, evm.gasService);
+  const osmosisTest = await OsmosisTest.deploy(
+    avalanche.gateway,
+    avalanche.gasService
+  );
   await osmosisTest.deployed();
 
   console.log('OsmosisTest deployed to:', osmosisTest.address);

@@ -5,6 +5,13 @@ export const evm = {
   gasService: '0xbE406F0189A0B4cf3A05C286473D23791Dd44Cc6',
 };
 
+export const avalanche = {
+  name: 'avalanche',
+  rpcUrl: 'https://api.avax-test.network/ext/bc/C/rpc',
+  gateway: '0xC249632c2D40b9001FE907806902f63038B737Ab',
+  gasService: '0xbE406F0189A0B4cf3A05C286473D23791Dd44Cc6',
+};
+
 export const ganache = {
   name: 'ganache',
   rpcUrl:
