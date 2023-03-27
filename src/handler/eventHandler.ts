@@ -75,11 +75,11 @@ export async function handleEvmToCosmosEvent(
     },
   });
 
-  // Sent a confirm tx to testnet-vx
-//   const confirmTx = await vxClient.confirmEvmTx(event.sourceChain, event.hash);
-//   logger.info(
-//     `[handleEvmToCosmosEvent] Confirmed: ${confirmTx.transactionHash}`
-//   );
+  // Sent a confirm tx to axelar network.
+  const confirmTx = await vxClient.confirmEvmTx(event.sourceChain, event.hash);
+  logger.info(
+    `[handleEvmToCosmosEvent] Confirmed: ${confirmTx.transactionHash}`
+  );
 }
 
 export async function handleCosmosToEvmContractCallEvent(
