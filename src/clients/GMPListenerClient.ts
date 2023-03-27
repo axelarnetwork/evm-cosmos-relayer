@@ -70,11 +70,6 @@ export class GMPListenerClient {
       null,
       null
     );
-    // const events = await this.gatewayContract.queryFilter(filter, 0, "latest");
-    // events.forEach((event) => {
-    //   logger.info(event.args.destinationChain);
-    // });
-
     this.gatewayContract.on(filter, async (...args) => {
       const event = args[7];
       if (event.blockNumber <= this.currentBlock) return;
