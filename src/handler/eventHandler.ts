@@ -14,6 +14,7 @@ import {
   ContractCallWithTokenEventObject,
   ContractCallApprovedEvent,
   ContractCallApprovedEventObject,
+  ContractCallEventObject,
 } from '../types/contracts/IAxelarGateway';
 import {
   getBatchCommandIdFromSignTx,
@@ -54,26 +55,47 @@ export async function handleEvmToCosmosConfirmEvent(
 
 export async function handleEvmToCosmosEvent(
   vxClient: AxelarClient,
-  event: EvmEvent<ContractCallWithTokenEventObject>
+  event: EvmEvent<ContractCallWithTokenEventObject | ContractCallEventObject>
 ) {
   const id = `${event.hash}-${event.logIndex}`;
-  await prisma.relayData.create({
-    data: {
-      id,
-      from: event.sourceChain,
-      to: event.destinationChain,
-      callContractWithToken: {
-        create: {
-          payload: event.args.payload,
-          payloadHash: event.args.payloadHash,
-          contractAddress: event.args.destinationContractAddress,
-          sourceAddress: event.args.sender,
-          amount: event.args.amount.toString(),
-          symbol: event.args.symbol,
+
+  const _args = event.args as any;
+  if (_args.amount) {
+    const args = event.args as ContractCallWithTokenEventObject;
+    await prisma.relayData.create({
+      data: {
+        id,
+        from: event.sourceChain,
+        to: event.destinationChain,
+        callContractWithToken: {
+          create: {
+            payload: event.args.payload,
+            payloadHash: event.args.payloadHash,
+            contractAddress: event.args.destinationContractAddress,
+            sourceAddress: event.args.sender,
+            amount: args.amount.toString(),
+            symbol: args.symbol,
+          },
         },
       },
-    },
-  });
+    });
+  } else {
+    await prisma.relayData.create({
+      data: {
+        id,
+        from: event.sourceChain,
+        to: event.destinationChain,
+        callContract: {
+          create: {
+            payload: event.args.payload,
+            payloadHash: event.args.payloadHash,
+            contractAddress: event.args.destinationContractAddress,
+            sourceAddress: event.args.sender,
+          },
+        },
+      },
+    });
+  }
 
   // Sent a confirm tx to axelar network.
   const confirmTx = await vxClient.confirmEvmTx(event.sourceChain, event.hash);

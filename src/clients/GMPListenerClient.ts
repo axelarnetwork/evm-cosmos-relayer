@@ -30,7 +30,7 @@ export class GMPListenerClient {
   }
 
   private async listenCallContract(
-    subject: Subject<EvmEvent<CallContractEventObject>>
+    subject: Subject<EvmEvent<ContractCallEventObject>>
   ) {
     const filter = this.gatewayContract.filters.ContractCall(
       null,
