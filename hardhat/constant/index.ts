@@ -19,6 +19,10 @@ export const ganache = {
   gateway: '0xE720c5C38028Ca08DA47E179162Eca2DD255B6eC',
 };
 
-export const cosmos = {
+export const osmosis = {
   name: 'osmosis-5',
+  callContract:
+    'osmo1uhd7md703jprhqprvz96fdpttlgcaftmtf8gy65ny78jkrmxr3jqtdlekz',
+  callContractWithToken:
+    'osmo1956rjtkm4rh3ncsh5cx0u8552sx80z9ppwmnmucccz3mhs0pglus4rgm8u',
 };
