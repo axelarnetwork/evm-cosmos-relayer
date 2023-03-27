@@ -12,7 +12,6 @@ import {
 import {
   ContractCallApprovedWithMintEventObject,
   ContractCallWithTokenEventObject,
-  ContractCallApprovedEvent,
   ContractCallApprovedEventObject,
   ContractCallEventObject,
 } from '../types/contracts/IAxelarGateway';
