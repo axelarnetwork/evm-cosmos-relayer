@@ -27,7 +27,6 @@ import {
 import { initServer } from './api';
 import { logger } from './logger';
 import { createCosmosEventSubject, createEvmEventSubject } from './subject';
-import { ExecuteParams } from '@axelar-network/axelarjs-sdk';
 
 const sEvmCallContractWithToken =
   createEvmEventSubject<ContractCallWithTokenEventObject>();
