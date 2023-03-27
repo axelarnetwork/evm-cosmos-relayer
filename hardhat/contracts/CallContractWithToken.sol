@@ -49,8 +49,8 @@ contract CallContractWithToken is AxelarExecutable {
   }
 
   function _executeWithToken(
-    string calldata sourceChain,
-    string calldata sourceAddress,
+    string calldata,
+    string calldata,
     bytes calldata payload,
     string calldata tokenSymbol,
     uint256 amount
