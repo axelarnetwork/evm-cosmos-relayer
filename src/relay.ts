@@ -4,6 +4,7 @@ import { axelarChain, cosmosChains, evmChains } from './config';
 import {
   ContractCallSubmitted,
   ContractCallWithTokenSubmitted,
+  ExecuteRequest,
   IBCPacketEvent,
 } from './types';
 import {
@@ -26,13 +27,14 @@ import {
 import { initServer } from './api';
 import { logger } from './logger';
 import { createCosmosEventSubject, createEvmEventSubject } from './subject';
+import { ExecuteParams } from '@axelar-network/axelarjs-sdk';
 
 const sEvmCallContractWithToken =
   createEvmEventSubject<ContractCallWithTokenEventObject>();
 
 const sEvmCallContract = createEvmEventSubject<ContractCallEventObject>();
 
-const sEvmConfirmEvent = new Subject<string>();
+const sEvmConfirmEvent = new Subject<ExecuteRequest>();
 
 const sEvmApproveContractCallWithToken =
   createEvmEventSubject<ContractCallApprovedWithMintEventObject>();
@@ -72,9 +74,9 @@ async function main() {
         .catch((e) => handleAnyError('handleEvmToCosmosEvent', e));
     });
 
-  sEvmConfirmEvent.subscribe((eventId) => {
-    prepareHandler(eventId, 'handleEvmToCosmosConfirmEvent')
-      .then(() => handleEvmToCosmosConfirmEvent(axelarClient, eventId))
+  sEvmConfirmEvent.subscribe((executeParams) => {
+    prepareHandler(executeParams, 'handleEvmToCosmosConfirmEvent')
+      .then(() => handleEvmToCosmosConfirmEvent(axelarClient, executeParams))
       .catch((e) => handleAnyError('handleEvmToCosmosConfirmEvent', e));
   });
 

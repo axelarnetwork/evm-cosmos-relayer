@@ -4,6 +4,7 @@ import {
   ContractCallSubmitted,
   ContractCallWithTokenSubmitted,
   EvmEvent,
+  ExecuteRequest,
   IBCEvent,
   IBCPacketEvent,
   Status,
@@ -21,34 +22,13 @@ import {
 
 export async function handleEvmToCosmosConfirmEvent(
   vxClient: AxelarClient,
-  id: string
+  executeParams: ExecuteRequest
 ) {
-  const data = await prisma.relayData.findUnique({
-    where: {
-      id,
-    },
-    include: {
-      callContractWithToken: true,
-      callContract: true,
-    },
-  });
-  if (!data) {
-    logger.debug(
-      `[handleEvmToCosmosConfirmEvent] Failed to get the data from the DB: ${id}`
-    );
-    return;
-  }
-  const [hash, eventIndex] = id.split('-');
-  const payload =
-    data.callContract?.payload || data.callContractWithToken?.payload;
-
-  if (!payload) {
-    logger.debug('Cannot find payload in the DB.');
-    return;
-  }
+  const { id, payload } = executeParams;
+  const [hash, logIndex] = id.split('-');
 
   const executeTx = await vxClient.executeMessageRequest(
-    parseInt(eventIndex),
+    parseInt(logIndex),
     hash,
     payload
   );
@@ -76,7 +56,7 @@ export async function handleEvmToCosmosEvent(
   vxClient: AxelarClient,
   event: EvmEvent<ContractCallWithTokenEventObject>
 ) {
-  const id = `${event.hash}-${event.eventIndex}`;
+  const id = `${event.hash}-${event.logIndex}`;
   await prisma.relayData.create({
     data: {
       id,

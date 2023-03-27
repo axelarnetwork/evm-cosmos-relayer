@@ -40,29 +40,29 @@ export const initServer = async () => {
     method: 'GET',
     path: '/tx.get',
     options: {
-      description: 'Get a transaction by txHash and eventIndex',
+      description: 'Get a transaction by txHash and logIndex',
       notes:
-        'Returns the transaction detail of given txHash and eventIndex. status:0 = pending, status:1 = approved, status:2 = completed, status:3 = failed',
+        'Returns the transaction detail of given txHash and logIndex. status:0 = pending, status:1 = approved, status:2 = completed, status:3 = failed',
       tags: ['api'],
       validate: {
         query: Joi.object({
           txHash: Joi.string()
             .required()
             .description('A transaction hash of source tx.'),
-          eventIndex: Joi.number()
+          logIndex: Joi.number()
             .required()
             .default(0)
             .description(
-              'A log index of the CallContractWithToken event (from cosmos, the eventIndex is 0)'
+              'A log index of the CallContractWithToken event (from cosmos, the logIndex is 0)'
             ),
         }),
       },
     },
     handler: async (request) => {
-      const { txHash, eventIndex } = request.query;
+      const { txHash, logIndex } = request.query;
       const data = await prisma.relayData.findFirst({
         where: {
-          id: `${txHash}-${eventIndex}`,
+          id: `${txHash}-${logIndex}`,
         },
         include: {
           callContractWithToken: true,

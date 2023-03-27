@@ -4,7 +4,7 @@ import { Height } from 'cosmjs-types/ibc/core/client/v1/client';
 export interface EvmEvent<T> {
   hash: string;
   blockNumber: number;
-  eventIndex: number;
+  logIndex: number;
   sourceChain: string;
   destinationChain: string;
   args: T;
@@ -38,6 +38,11 @@ export interface PaginationParams {
   include: {
     callContractWithToken: boolean;
   };
+}
+
+export interface ExecuteRequest {
+    id: string,
+    payload: string
 }
 
 export interface LinkRequest {

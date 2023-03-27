@@ -50,13 +50,13 @@ export class GMPListenerClient {
 
       const receipt = await event.getTransactionReceipt();
       const index = receipt.logs.findIndex(
-        (log) => log.eventIndex === event.eventIndex
+        (log) => log.logIndex === event.logIndex
       );
 
       subject.next({
         hash: event.transactionHash,
         blockNumber: event.blockNumber,
-        eventIndex: index,
+        logIndex: index,
         sourceChain: this.chainId,
         destinationChain: event.args.destinationChain,
         args: filterEventArgs(event),
@@ -74,13 +74,13 @@ export class GMPListenerClient {
 
       const receipt = await event.getTransactionReceipt();
       const index = receipt.logs.findIndex(
-        (log) => log.eventIndex === event.eventIndex
+        (log) => log.logIndex === event.logIndex
       );
 
       subject.next({
         hash: event.transactionHash,
         blockNumber: event.blockNumber,
-        eventIndex: index,
+        logIndex: index,
         sourceChain: event.args.sourceChain,
         destinationChain: this.chainId,
         args: filterEventArgs(event),
@@ -98,13 +98,13 @@ export class GMPListenerClient {
 
       const receipt = await event.getTransactionReceipt();
       const index = receipt.logs.findIndex(
-        (log) => log.eventIndex === event.eventIndex
+        (log) => log.logIndex === event.logIndex
       );
 
       subject.next({
         hash: event.transactionHash,
         blockNumber: event.blockNumber,
-        eventIndex: index,
+        logIndex: index,
         sourceChain: event.args.sourceChain,
         destinationChain: this.chainId,
         args: filterEventArgs(event),

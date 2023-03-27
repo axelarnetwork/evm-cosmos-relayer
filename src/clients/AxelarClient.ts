@@ -12,6 +12,7 @@ import { Subject } from 'rxjs';
 import {
   ContractCallSubmitted,
   ContractCallWithTokenSubmitted,
+  ExecuteRequest,
   IBCEvent,
   IBCPacketEvent,
 } from '../types';
@@ -101,20 +102,20 @@ export class AxelarClient {
   }
 
   public async executeMessageRequest(
-    eventIndex: number,
+    logIndex: number,
     txHash: string,
     payload: string
   ) {
     const _payload = getExecuteMessageRequest(
       this.signingClient.getAddress(),
       txHash,
-      eventIndex,
+      logIndex,
       payload
     );
     return this.signingClient.broadcast(_payload).catch((e: any) => {
       if (e.message.indexOf('already executed') > -1) {
         logger.error(
-          `[AxelarClient.executeMessageRequest] Already executed ${txHash} - ${eventIndex}`
+          `[AxelarClient.executeMessageRequest] Already executed ${txHash} - ${logIndex}`
         );
       }
       logger.error(
@@ -167,7 +168,7 @@ export class AxelarClient {
     this.listenForCosmosContractCallWithToken(contractCallWithTokenSubject);
   }
 
-  async listenForEvmEventCompleted(eventIdSubject: Subject<string>) {
+  async listenForEvmEventCompleted(eventIdSubject: Subject<ExecuteRequest>) {
     if (this.callEvmEventCompletedWs) {
       return this.callEvmEventCompletedWs.reconnect();
     }
@@ -198,17 +199,35 @@ export class AxelarClient {
         // check if the event topic is matched
         if (!event.result || event.result.query !== topic) return;
 
+        // parse the event id
         const eventId = parseEvmEventCompletedEvent(event.result.events);
 
+        // get the payload from the event id
         prisma.relayData
           .findUnique({
             where: {
               id: eventId,
             },
+            include: {
+              callContract: true,
+              callContractWithToken: true,
+            },
           })
           .then((data) => {
             if (data) {
-              eventIdSubject.next(eventId);
+              const payload =
+                data.callContract?.payload ||
+                data.callContractWithToken?.payload;
+
+              if (!payload) {
+                logger.debug('Cannot find payload in the DB.');
+                return;
+              }
+
+              eventIdSubject.next({
+                id: eventId,
+                payload,
+              });
             }
           });
       }
