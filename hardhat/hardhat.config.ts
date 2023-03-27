@@ -3,7 +3,7 @@ import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
 import './tasks/multiSend';
 import './tasks/balance';
-import './tasks/osmosisTest';
+import './tasks/callContractWithToken';
 import { evm, ganache } from './constant';
 import { privateKey } from './secret.json';
 
