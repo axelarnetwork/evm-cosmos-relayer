@@ -28,21 +28,16 @@ import { initServer } from './api';
 import { logger } from './logger';
 import { createCosmosEventSubject, createEvmEventSubject } from './subject';
 
+const sEvmCallContract = createEvmEventSubject<ContractCallEventObject>();
 const sEvmCallContractWithToken =
   createEvmEventSubject<ContractCallWithTokenEventObject>();
 
-const sEvmCallContract = createEvmEventSubject<ContractCallEventObject>();
-
 const sEvmConfirmEvent = new Subject<ExecuteRequest>();
-
 const sEvmApproveContractCallWithToken =
   createEvmEventSubject<ContractCallApprovedWithMintEventObject>();
-
 const sEvmApproveContractCall =
   createEvmEventSubject<ContractCallApprovedEventObject>();
-
 const sCosmosContractCall = createCosmosEventSubject<ContractCallSubmitted>();
-
 const sCosmosContractCallWithToken =
   createCosmosEventSubject<ContractCallWithTokenSubmitted>();
 
@@ -53,7 +48,7 @@ async function main() {
   const listeners = evmChains.map((evm) => new GMPListenerClient(evm));
   const axelarClient = await AxelarClient.init(axelarChain);
   const evmClients = evmChains.map((evm) => new EvmClient(evm));
-  const cosmosClients = cosmosChains.map((cosmos) => AxelarClient.init(cosmos));
+  //   const cosmosClients = cosmosChains.map((cosmos) => AxelarClient.init(cosmos));
 
   /** ######## Handle events ########## */
 
@@ -133,6 +128,7 @@ async function main() {
 
   for (const listener of listeners) {
     listener.listenForEvmGMP(
+      sEvmCallContract,
       sEvmCallContractWithToken,
       sEvmApproveContractCallWithToken,
       sEvmApproveContractCall
