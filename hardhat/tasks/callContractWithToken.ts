@@ -1,5 +1,15 @@
 import { task } from 'hardhat/config';
-import { osmosis } from '../constant';
+import { avalanche, evm, osmosis } from '../constant';
+
+function getNetworkConfig(networkName: string) {
+  if (networkName === 'avalanche') {
+    return avalanche;
+  } else if (networkName === 'goerli') {
+    return evm;
+  } else {
+    throw new Error('Network not supported');
+  }
+}
 
 task('callContractWithToken', 'Send GMP tx from evm to osmosis')
   .addPositionalParam('amount', 'Amount')
@@ -25,7 +35,13 @@ task('callContractWithToken', 'Send GMP tx from evm to osmosis')
     const destinationChain = osmosis.name;
     const destAddress = osmosis.callContractWithToken;
     const symbol = 'aUSDC';
-    const usdcAddress = '0x57F1c63497AEe0bE305B8852b354CEc793da43bB';
+    const gateway = new ethers.Contract(
+      getNetworkConfig(hre.network.name).gateway,
+      ['function tokenAddresses(string symbol) view returns (address)'],
+      deployer
+    );
+    const usdcAddress = await gateway.tokenAddresses(symbol);
+    console.log('usdcAddress', usdcAddress);
 
     const erc20 = new ethers.Contract(
       usdcAddress,
