@@ -6,7 +6,7 @@ import {IAxelarGateway} from '@axelar-network/axelar-gmp-sdk-solidity/contracts/
 import {IERC20} from '@axelar-network/axelar-gmp-sdk-solidity/contracts/interfaces/IERC20.sol';
 import {IAxelarGasService} from '@axelar-network/axelar-gmp-sdk-solidity/contracts/interfaces/IAxelarGasService.sol';
 
-contract OsmosisTest is AxelarExecutable {
+contract CallContractWithToken is AxelarExecutable {
   IAxelarGasService public immutable gasReceiver;
 
   constructor(address gateway_, address gasReceiver_)
