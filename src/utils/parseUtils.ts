@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 import { ContractCallWithTokenSubmitted, IBCEvent } from '../types';
 import { ContractCallSubmitted } from '../types';
 import { decodeBase64, removeQuote } from './utils';
@@ -24,6 +25,10 @@ export const getBatchCommandIdFromSignTx = (signTx: any) => {
     (attr: { key: string }) => attr.key === 'batchedCommandID'
   ).value;
   return batchedCommandId;
+};
+
+export const parseEvmEventCompletedEvent = (event: any): string => {
+  return removeQuote(event['axelar.evm.v1beta1.EVMEventCompleted.event_id'][0]);
 };
 
 export const parseContractCallSubmittedEvent = (

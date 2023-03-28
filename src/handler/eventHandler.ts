@@ -4,6 +4,7 @@ import {
   ContractCallSubmitted,
   ContractCallWithTokenSubmitted,
   EvmEvent,
+  ExecuteRequest,
   IBCEvent,
   IBCPacketEvent,
   Status,
@@ -18,6 +19,38 @@ import {
   getBatchCommandIdFromSignTx,
   getPacketSequenceFromExecuteTx,
 } from '../utils/parseUtils';
+
+export async function handleEvmToCosmosConfirmEvent(
+  vxClient: AxelarClient,
+  executeParams: ExecuteRequest
+) {
+  const { id, payload } = executeParams;
+  const [hash, logIndex] = id.split('-');
+
+  const executeTx = await vxClient.executeMessageRequest(
+    parseInt(logIndex),
+    hash,
+    payload
+  );
+  logger.info(
+    `[handleEvmToCosmosEvent] Executed: ${executeTx.transactionHash}`
+  );
+  const packetSequence = getPacketSequenceFromExecuteTx(executeTx);
+
+  // save data to db.
+  const updatedData = await prisma.relayData.update({
+    where: {
+      id,
+    },
+    data: {
+      status: Status.SUCCESS,
+      packetSequence,
+    },
+  });
+  logger.info(
+    `[handleEvmToCosmosEvent] DB Updated: ${JSON.stringify(updatedData)}`
+  );
+}
 
 export async function handleEvmToCosmosEvent(
   vxClient: AxelarClient,
@@ -46,40 +79,6 @@ export async function handleEvmToCosmosEvent(
   const confirmTx = await vxClient.confirmEvmTx(event.sourceChain, event.hash);
   logger.info(
     `[handleEvmToCosmosEvent] Confirmed: ${confirmTx.transactionHash}`
-  );
-
-  // Wait for the tx to be confirmed
-  await vxClient.pollUntilContractCallWithTokenConfirmed(
-    event.sourceChain,
-    `${event.hash}-${event.logIndex}`,
-    3000
-  );
-
-  // Sent an execute tx to testnet
-  // Check if the tx is already executed
-
-  const executeTx = await vxClient.executeMessageRequest(
-    event.logIndex,
-    event.hash,
-    event.args.payload
-  );
-  logger.info(
-    `[handleEvmToCosmosEvent] Executed: ${executeTx.transactionHash}`
-  );
-  const packetSequence = getPacketSequenceFromExecuteTx(executeTx);
-
-  // save data to db.
-  const updatedData = await prisma.relayData.update({
-    where: {
-      id,
-    },
-    data: {
-      status: Status.SUCCESS,
-      packetSequence,
-    },
-  });
-  logger.info(
-    `[handleEvmToCosmosEvent] DB Updated: ${JSON.stringify(updatedData)}`
   );
 }
 

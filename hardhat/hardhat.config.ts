@@ -23,6 +23,12 @@ const config: HardhatUserConfig = {
       url: evm.rpcUrl,
       accounts: [privateKey],
     },
+    avalanche: {
+        chainId: 43113,
+        gasMultiplier: 2,
+        url: 'https://api.avax-test.network/ext/bc/C/rpc',
+        accounts: [privateKey],
+    }
   },
 };
 

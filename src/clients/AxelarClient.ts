@@ -12,14 +12,16 @@ import { Subject } from 'rxjs';
 import {
   ContractCallSubmitted,
   ContractCallWithTokenSubmitted,
+  ExecuteRequest,
   IBCEvent,
   IBCPacketEvent,
 } from '../types';
 import WebSocket from 'isomorphic-ws';
-import { SigningClient } from '.';
+import { SigningClient, prisma } from '.';
 import {
   parseContractCallSubmittedEvent,
   parseContractCallWithTokenSubmittedEvent,
+  parseEvmEventCompletedEvent,
 } from '../utils/parseUtils';
 import { logger } from '../logger';
 import { env } from '..';
@@ -29,6 +31,7 @@ export class AxelarClient {
   public ws: ReconnectingWebSocket | undefined;
   public callContractWs: ReconnectingWebSocket | undefined;
   public callContractWithTokenWs: ReconnectingWebSocket | undefined;
+  public callEvmEventCompletedWs: ReconnectingWebSocket | undefined;
   private wsOptions = {
     WebSocket, // custom WebSocket constructor
     connectionTimeout: 30000,
@@ -110,6 +113,11 @@ export class AxelarClient {
       payload
     );
     return this.signingClient.broadcast(_payload).catch((e: any) => {
+      if (e.message.indexOf('already executed') > -1) {
+        logger.error(
+          `[AxelarClient.executeMessageRequest] Already executed ${txHash} - ${logIndex}`
+        );
+      }
       logger.error(
         `[AxelarClient.executeMessageRequest] Failed to broadcast ${e.message}`
       );
@@ -158,6 +166,72 @@ export class AxelarClient {
   ) {
     this.listenForCosmosContractCall(calltractCallSubject);
     this.listenForCosmosContractCallWithToken(contractCallWithTokenSubject);
+  }
+
+  async listenForEvmEventCompleted(eventIdSubject: Subject<ExecuteRequest>) {
+    if (this.callEvmEventCompletedWs) {
+      return this.callEvmEventCompletedWs.reconnect();
+    }
+
+    this.callEvmEventCompletedWs = new ReconnectingWebSocket(
+      this.signingClient.config.ws,
+      [],
+      this.wsOptions
+    );
+
+    const topic = `tm.event='NewBlock' AND axelar.evm.v1beta1.EVMEventCompleted.event_id EXISTS`;
+    logger.debug(`Subscribed for event: ${topic}`);
+
+    this.callEvmEventCompletedWs.send(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'subscribe',
+        params: [topic],
+      })
+    );
+
+    this.callEvmEventCompletedWs.addEventListener(
+      'message',
+      (ev: MessageEvent<any>) => {
+        const event = JSON.parse(ev.data.toString());
+
+        // check if the event topic is matched
+        if (!event.result || event.result.query !== topic) return;
+
+        // parse the event id
+        const eventId = parseEvmEventCompletedEvent(event.result.events);
+
+        // get the payload from the event id
+        prisma.relayData
+          .findUnique({
+            where: {
+              id: eventId,
+            },
+            include: {
+              callContract: true,
+              callContractWithToken: true,
+            },
+          })
+          .then((data) => {
+            if (data) {
+              const payload =
+                data.callContract?.payload ||
+                data.callContractWithToken?.payload;
+
+              if (!payload) {
+                logger.debug('Cannot find payload in the DB.');
+                return;
+              }
+
+              eventIdSubject.next({
+                id: eventId,
+                payload,
+              });
+            }
+          });
+      }
+    );
   }
 
   private listenForCosmosContractCallWithToken(

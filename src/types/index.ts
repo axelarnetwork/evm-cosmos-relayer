@@ -40,6 +40,11 @@ export interface PaginationParams {
   };
 }
 
+export interface ExecuteRequest {
+    id: string,
+    payload: string
+}
+
 export interface LinkRequest {
   sender: Uint8Array;
   chain: string;
