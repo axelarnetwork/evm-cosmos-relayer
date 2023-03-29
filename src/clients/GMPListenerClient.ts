@@ -32,13 +32,7 @@ export class GMPListenerClient {
   private async listenCallContract(
     subject: Subject<EvmEvent<ContractCallEventObject>>
   ) {
-    const filter = this.gatewayContract.filters.ContractCall(
-      null,
-      null,
-      null,
-      null,
-      null
-    );
+    const filter = this.gatewayContract.filters.ContractCall();
     this.gatewayContract.on(filter, async (...args) => {
       const event = args[5];
       if (event.blockNumber <= this.currentBlock) return;
