@@ -9,6 +9,7 @@ import { filterEventArgs } from '../utils/filterUtils';
 import {
   ContractCallApprovedEventObject,
   ContractCallApprovedWithMintEventObject,
+  ContractCallEventObject,
   ContractCallWithTokenEventObject,
 } from '../types/contracts/IAxelarGateway';
 import { logger } from '../logger';
@@ -28,6 +29,30 @@ export class GMPListenerClient {
     this.chainId = evm.id;
   }
 
+  private async listenCallContract(
+    subject: Subject<EvmEvent<ContractCallEventObject>>
+  ) {
+    const filter = this.gatewayContract.filters.ContractCall();
+    this.gatewayContract.on(filter, async (...args) => {
+      const event = args[5];
+      if (event.blockNumber <= this.currentBlock) return;
+
+      const receipt = await event.getTransactionReceipt();
+      const index = receipt.logs.findIndex(
+        (log) => log.logIndex === event.logIndex
+      );
+
+      subject.next({
+        hash: event.transactionHash,
+        blockNumber: event.blockNumber,
+        logIndex: index,
+        sourceChain: this.chainId,
+        destinationChain: event.args.destinationChain,
+        args: filterEventArgs(event),
+      });
+    });
+  }
+
   private async listenCallContractWithToken(
     subject: Subject<EvmEvent<ContractCallWithTokenEventObject>>
   ) {
@@ -39,11 +64,6 @@ export class GMPListenerClient {
       null,
       null
     );
-    // const events = await this.gatewayContract.queryFilter(filter, 0, "latest");
-    // events.forEach((event) => {
-    //   logger.info(event.args.destinationChain);
-    // });
-
     this.gatewayContract.on(filter, async (...args) => {
       const event = args[7];
       if (event.blockNumber <= this.currentBlock) return;
@@ -88,7 +108,7 @@ export class GMPListenerClient {
     });
   }
 
-  private async listenCallContractApprove(
+  public async listenCallContractApprove(
     subject: Subject<EvmEvent<ContractCallApprovedEventObject>>
   ) {
     const filter = this.gatewayContract.filters.ContractCallApproved();
@@ -113,6 +133,7 @@ export class GMPListenerClient {
   }
 
   public async listenForEvmGMP(
+    evmCallContractObservable: Subject<EvmEvent<ContractCallEventObject>>,
     evmWithTokenObservable: Subject<EvmEvent<ContractCallWithTokenEventObject>>,
     evmApproveWithTokenObservable: Subject<
       EvmEvent<ContractCallApprovedWithMintEventObject>
@@ -126,7 +147,10 @@ export class GMPListenerClient {
     this.currentBlock = await this.gatewayContract.provider.getBlockNumber();
     logger.info(`Current block number: ${this.currentBlock}`);
 
-    // listen for gmp event that originates from the evm chain.
+    // listen for ContractCall event that originates from the evm chain.
+    this.listenCallContract(evmCallContractObservable);
+
+    // listen for the ContractCallWithToken event that originates from the evm chain.
     this.listenCallContractWithToken(evmWithTokenObservable);
 
     // listen for the CallContractApproveWithMint event at the evm chain where it is sent from cosmos.
