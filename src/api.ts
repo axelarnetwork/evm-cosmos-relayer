@@ -1,5 +1,5 @@
 import hapi, { Request } from '@hapi/hapi';
-import { env, prisma } from './index';
+import { env } from './index';
 import Joi from 'joi';
 import fetch from 'node-fetch';
 import { PaginationParams, Status } from './types';
@@ -10,6 +10,7 @@ import Vision from '@hapi/vision';
 import HapiSwagger from 'hapi-swagger';
 
 export const initServer = async () => {
+  const prisma = new PrismaClient();
   const server = hapi.server({
     port: env.PORT,
     host: '0.0.0.0',

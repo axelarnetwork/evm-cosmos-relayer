@@ -17,7 +17,7 @@ import {
   IBCPacketEvent,
 } from '../types';
 import WebSocket from 'isomorphic-ws';
-import { SigningClient, prisma } from '.';
+import { DatabaseClient, SigningClient } from '.';
 import {
   parseContractCallSubmittedEvent,
   parseContractCallWithTokenSubmittedEvent,
@@ -32,6 +32,7 @@ export class AxelarClient {
   public callContractWs: ReconnectingWebSocket | undefined;
   public callContractWithTokenWs: ReconnectingWebSocket | undefined;
   public callEvmEventCompletedWs: ReconnectingWebSocket | undefined;
+  private db: DatabaseClient;
   private wsOptions = {
     WebSocket, // custom WebSocket constructor
     connectionTimeout: 30000,
@@ -39,14 +40,15 @@ export class AxelarClient {
   };
   public chainId: string;
 
-  constructor(_signingClient: SigningClient, id: string) {
+  constructor(_signingClient: SigningClient, _db: DatabaseClient, id: string) {
     this.signingClient = _signingClient;
     this.chainId = id;
+    this.db = _db;
   }
 
-  static async init(_config: CosmosNetworkConfig) {
+  static async init(db: DatabaseClient, _config: CosmosNetworkConfig) {
     const signingClient = await SigningClient.init(_config);
-    return new AxelarClient(signingClient, _config.chainId);
+    return new AxelarClient(signingClient, db, _config.chainId);
   }
 
   public confirmEvmTx(chain: string, txHash: string) {
@@ -203,33 +205,22 @@ export class AxelarClient {
         const eventId = parseEvmEventCompletedEvent(event.result.events);
 
         // get the payload from the event id
-        prisma.relayData
-          .findUnique({
-            where: {
-              id: eventId,
-            },
-            include: {
-              callContract: true,
-              callContractWithToken: true,
-            },
-          })
-          .then((data) => {
-            if (data) {
-              const payload =
-                data.callContract?.payload ||
-                data.callContractWithToken?.payload;
+        this.db.findRelayDataById(eventId).then((data) => {
+          if (data) {
+            const payload =
+              data.callContract?.payload || data.callContractWithToken?.payload;
 
-              if (!payload) {
-                logger.debug('Cannot find payload in the DB.');
-                return;
-              }
-
-              eventIdSubject.next({
-                id: eventId,
-                payload,
-              });
+            if (!payload) {
+              logger.debug('Cannot find payload in the DB.');
+              return;
             }
-          });
+
+            eventIdSubject.next({
+              id: eventId,
+              payload,
+            });
+          }
+        });
       }
     );
   }
