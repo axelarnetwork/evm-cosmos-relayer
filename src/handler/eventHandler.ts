@@ -150,7 +150,13 @@ export async function handleCosmosToEvmCallContractCompleteEvent(
     if (!payload) continue;
 
     // check if already executed
-    const isExecuted = await evmClient.isExecuted(commandId);
+    const isExecuted = await evmClient.isCallContractExecuted(
+      commandId,
+      sourceChain,
+      sourceAddress,
+      contractAddress,
+      payloadHash
+    );
     if (isExecuted) {
       result.push({
         id,
@@ -223,6 +229,27 @@ export async function handleCosmosToEvmCallContractWithTokenCompleteEvent(
     const { payload, id } = relayData;
     if (!payload) continue;
 
+    const isExecuted = await evmClient.isCallContractWithTokenExecuted(
+      commandId,
+      sourceChain,
+      sourceAddress,
+      contractAddress,
+      payloadHash,
+      symbol,
+      amount.toString()
+    );
+
+    if (isExecuted) {
+      result.push({
+        id,
+        status: Status.SUCCESS,
+      });
+      logger.info(
+        `[handleCosmosToEvmCallContractWithTokenCompleteEvent] Already executed: ${commandId}. Will mark the status in the DB as Success.`
+      );
+      continue;
+    }
+
     const tx = await evmClient.executeWithToken(
       contractAddress,
       commandId,
@@ -235,7 +262,7 @@ export async function handleCosmosToEvmCallContractWithTokenCompleteEvent(
 
     if (!tx) {
       logger.info([
-        '[handleCosmosToEvmCallContractWithTokenCompleteEvent] executeWithToken failed',
+        '[handleCosmosToEvmCallContractWithTokenCompleteEvent] Execute failed: ${id}. Will mark the status in the DB as Failed.',
         id,
       ]);
 
