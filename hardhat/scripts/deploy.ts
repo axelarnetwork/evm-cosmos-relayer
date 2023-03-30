@@ -1,32 +1,36 @@
-import { ethers } from 'hardhat';
+import { ethers, network } from 'hardhat';
 import { avalanche, evm } from '../constant';
 
-async function main() {
-  const MultiSend = await ethers.getContractFactory('MultiSend');
-  const multiSend = await MultiSend.deploy(
-    evm.gateway,
-    ethers.constants.AddressZero
-  );
-  await multiSend.deployed();
-
-  console.log('MultiSend deployed to:', multiSend.address);
+function getNetworkConfig(networkName: string) {
+  if (networkName === 'avalanche') {
+    return avalanche;
+  } else if (networkName === 'goerli') {
+    return evm;
+  } else {
+    throw new Error('Network not supported');
+  }
 }
 
-async function deployOsmosis() {
-  const OsmosisTest = await ethers.getContractFactory('OsmosisTest');
-  const osmosisTest = await OsmosisTest.deploy(
-    avalanche.gateway,
-    avalanche.gasService
-  );
-  await osmosisTest.deployed();
+async function deployCallContractWithToken() {
+  console.log('Deploy on network', network.name);
+  const networkConfig = getNetworkConfig(network.name);
 
-  console.log('OsmosisTest deployed to:', osmosisTest.address);
+  const CallContractWithToken = await ethers.getContractFactory(
+    'CallContractWithToken'
+  );
+  const callContractWithToken = await CallContractWithToken.deploy(
+    networkConfig.gateway,
+    networkConfig.gasService
+  );
+  await callContractWithToken.deployed();
+
+  console.log(
+    'CallContractWithToken deployed to:',
+    callContractWithToken.address
+  );
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-// main().catch((error) => {
-deployOsmosis().catch((error) => {
+deployCallContractWithToken().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
