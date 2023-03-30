@@ -90,6 +90,13 @@ async function main() {
   sEvmConfirmEvent.subscribe((executeParams) => {
     prepareHandler(executeParams, db, 'handleEvmToCosmosConfirmEvent')
       .then(() => handleEvmToCosmosConfirmEvent(axelarClient, executeParams))
+      .then(({ status, packetSequence }) =>
+        db.updateEventStatusWithPacketSequence(
+          executeParams.id,
+          status,
+          packetSequence
+        )
+      )
       .catch((e) => handleAnyError(db, 'handleEvmToCosmosConfirmEvent', e));
   });
 

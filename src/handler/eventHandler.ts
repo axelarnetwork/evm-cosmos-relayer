@@ -1,4 +1,3 @@
-import { PrismaClient } from '@prisma/client';
 import { AxelarClient, DatabaseClient, EvmClient, env } from '..';
 import { logger } from '../logger';
 import {
@@ -33,24 +32,22 @@ export async function handleEvmToCosmosConfirmEvent(
     hash,
     payload
   );
+
+  if (!executeTx) {
+    return {
+      status: Status.FAILED,
+    };
+  }
+
   logger.info(
     `[handleEvmToCosmosEvent] Executed: ${executeTx.transactionHash}`
   );
   const packetSequence = getPacketSequenceFromExecuteTx(executeTx);
 
-  // save data to db.
-  const updatedData = await prisma.relayData.update({
-    where: {
-      id,
-    },
-    data: {
-      status: Status.SUCCESS,
-      packetSequence,
-    },
-  });
-  logger.info(
-    `[handleEvmToCosmosEvent] DB Updated: ${JSON.stringify(updatedData)}`
-  );
+  return {
+    status: Status.SUCCESS,
+    packetSequence,
+  };
 }
 
 export async function handleEvmToCosmosEvent(
