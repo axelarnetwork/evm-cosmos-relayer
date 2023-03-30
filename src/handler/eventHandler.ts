@@ -154,7 +154,7 @@ export async function handleCosmosToEvmCallContractCompleteEvent(
         status: Status.SUCCESS,
       });
       logger.info(
-        `[handleCosmosToEvmCallContractCompleteEvent] Already executed: ${id}. Will mark the status in the DB as Success.`
+        `[handleCosmosToEvmCallContractCompleteEvent] Already executed: ${commandId}. Will mark the status in the DB as Success.`
       );
       continue;
     }
