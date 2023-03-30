@@ -68,22 +68,22 @@ async function main() {
   sEvmCallContractWithToken
     .pipe(filterCosmosDestination(cosmosChains))
     .subscribe((event) => {
-      const _event = event as EvmEvent<ContractCallWithTokenEventObject>;
-      prepareHandler(_event, db, 'handleEvmToCosmosEvent')
-        .then(() => db.createEvmCallContractWithTokenEvent(_event))
+      const ev = event as EvmEvent<ContractCallWithTokenEventObject>;
+      prepareHandler(ev, db, 'handleEvmToCosmosEvent')
+        .then(() => db.createEvmCallContractWithTokenEvent(ev))
         .then(() => event.waitForFinality())
-        .then(() => handleEvmToCosmosEvent(axelarClient, _event))
+        .then(() => handleEvmToCosmosEvent(axelarClient, ev))
         .catch((e) => handleAnyError(db, 'handleEvmToCosmosEvent', e));
     });
 
   sEvmCallContract
     .pipe(filterCosmosDestination(cosmosChains))
     .subscribe((event) => {
-      const _event = event as EvmEvent<ContractCallEventObject>;
+      const ev = event as EvmEvent<ContractCallEventObject>;
       prepareHandler(event, db, 'handleEvmToCosmosEvent')
-        .then(() => db.createEvmCallContractEvent(_event))
-        .then(() => _event.waitForFinality())
-        .then(() => handleEvmToCosmosEvent(axelarClient, _event))
+        .then(() => db.createEvmCallContractEvent(ev))
+        .then(() => ev.waitForFinality())
+        .then(() => handleEvmToCosmosEvent(axelarClient, ev))
         .catch((e) => handleAnyError(db, 'handleEvmToCosmosEvent', e));
     });
 
@@ -130,17 +130,17 @@ async function main() {
   sEvmApproveContractCallWithToken
     .pipe(mergeMap((event) => mapEventToEvmClient(event, evmClients)))
     .subscribe(({ evmClient, event }) => {
-      const _event = event as EvmEvent<ContractCallApprovedWithMintEventObject>;
+      const ev = event as EvmEvent<ContractCallApprovedWithMintEventObject>;
       prepareHandler(
         event,
         db,
         'handleCosmosToEvmCallContractWithTokenCompleteEvent'
       )
-        .then(() => db.findCosmosToEvmCallContractWithTokenApproved(_event))
+        .then(() => db.findCosmosToEvmCallContractWithTokenApproved(ev))
         .then((relayDatas) =>
           handleCosmosToEvmCallContractWithTokenCompleteEvent(
             evmClient,
-            _event,
+            ev,
             relayDatas
           )
         )
