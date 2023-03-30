@@ -1,4 +1,4 @@
-import { Subject, filter } from 'rxjs';
+import { Subject, filter, mergeMap, of, throwError } from 'rxjs';
 import {
   GMPListenerClient,
   AxelarClient,
@@ -32,7 +32,10 @@ import {
 import { initServer } from './api';
 import { logger } from './logger';
 import { createCosmosEventSubject, createEvmEventSubject } from './subject';
-import { filterCosmosDestination } from './utils/filterUtils';
+import {
+  filterCosmosDestination,
+  mapEventToEvmClient,
+} from './utils/operatorUtils';
 
 const sEvmCallContract = createEvmEventSubject<ContractCallEventObject>();
 const sEvmCallContractWithToken =
@@ -117,39 +120,59 @@ async function main() {
   });
 
   // Subscribe to the ContractCallApprovedWithMint event at the gateway contract. (Cosmos -> EVM direction)
-  sEvmApproveContractCallWithToken.subscribe((event) => {
-    prepareHandler(
-      event,
-      db,
-      'handleCosmosToEvmCallContractWithTokenCompleteEvent'
-    )
-      .then(() =>
-        handleCosmosToEvmCallContractWithTokenCompleteEvent(evmClients, event)
+  sEvmApproveContractCallWithToken
+    .pipe(mergeMap((event) => mapEventToEvmClient(event, evmClients)))
+    .subscribe(({ evmClient, event }) => {
+      const _event = event as EvmEvent<ContractCallApprovedWithMintEventObject>;
+      prepareHandler(
+        event,
+        db,
+        'handleCosmosToEvmCallContractWithTokenCompleteEvent'
       )
-      .catch((e) =>
-        handleAnyError(
-          db,
-          'handleCosmosToEvmCallContractWithTokenCompleteEvent',
-          e
+        .then(() => db.findCosmosToEvmCallContractWithTokenApproved(_event))
+        .then((relayDatas) =>
+          handleCosmosToEvmCallContractWithTokenCompleteEvent(
+            evmClient,
+            _event,
+            relayDatas
+          )
         )
-      );
-  });
+        .then((results) =>
+          results?.forEach((result) =>
+            db.updateEventStatus(result.id, result.status)
+          )
+        )
+        .catch((e) =>
+          handleAnyError(
+            db,
+            'handleCosmosToEvmCallContractWithTokenCompleteEvent',
+            e
+          )
+        );
+    });
 
   // Subscribe to the ContractCallApproved event at the gateway contract. (Cosmos -> EVM direction)
-  sEvmApproveContractCall.subscribe((event) => {
-    prepareHandler(event, db, 'handleCosmosToEvmCallContractCompleteEvent')
-      //   .then(() => db.findCosmosToEvmCallContractApproved(event))
-      .then(() =>
-        handleCosmosToEvmCallContractCompleteEvent(
-          evmClients,
-          db.getPrismaClient(),
-          event
+  sEvmApproveContractCall
+    .pipe(mergeMap((event) => mapEventToEvmClient(event, evmClients)))
+    .subscribe(({ event, evmClient }) => {
+      prepareHandler(event, db, 'handleCosmosToEvmCallContractCompleteEvent')
+        .then(() => db.findCosmosToEvmCallContractApproved(event))
+        .then((relayDatas) =>
+          handleCosmosToEvmCallContractCompleteEvent(
+            evmClient,
+            event,
+            relayDatas
+          )
         )
-      )
-      .catch((e) =>
-        handleAnyError(db, 'handleCosmosToEvmCallContractCompleteEvent', e)
-      );
-  });
+        .then((results) =>
+          results?.forEach((result) =>
+            db.updateEventStatus(result.id, result.status)
+          )
+        )
+        .catch((e) =>
+          handleAnyError(db, 'handleCosmosToEvmCallContractCompleteEvent', e)
+        );
+    });
 
   // ########## Listens for events ##########
 

@@ -5,7 +5,7 @@ import {
   IAxelarGateway,
 } from '../types/contracts/index';
 import { EvmEvent } from '../types';
-import { filterEventArgs } from '../utils/filterUtils';
+import { filterEventArgs } from '../utils/operatorUtils';
 import {
   ContractCallApprovedEventObject,
   ContractCallApprovedWithMintEventObject,
