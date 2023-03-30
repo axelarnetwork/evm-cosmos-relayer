@@ -1,4 +1,3 @@
-import { logger } from '../logger';
 import { ContractCallWithTokenSubmitted, IBCEvent } from '../types';
 import { ContractCallSubmitted } from '../types';
 import { decodeBase64, removeQuote } from './utils';

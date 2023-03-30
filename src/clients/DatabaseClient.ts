@@ -13,7 +13,7 @@ import {
   ContractCallApprovedWithMintEventObject,
 } from '../types/contracts/IAxelarGateway';
 import { logger } from '../logger';
-import { Transaction, ethers } from 'ethers';
+import { ethers } from 'ethers';
 
 export class DatabaseClient {
   prisma: PrismaClient;
@@ -216,6 +216,24 @@ export class DatabaseClient {
       },
       data: {
         status,
+        updatedAt: new Date(),
+      },
+    });
+    logger.info(`[DBUpdate] ${JSON.stringify(executeDb)}`);
+  }
+
+  async updateEventStatusWithPacketSequence(
+    id: string,
+    status: Status,
+    sequence?: number
+  ) {
+    const executeDb = await this.prisma.relayData.update({
+      where: {
+        id,
+      },
+      data: {
+        status,
+        packetSequence: sequence,
         updatedAt: new Date(),
       },
     });
