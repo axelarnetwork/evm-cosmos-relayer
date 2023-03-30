@@ -3,17 +3,20 @@
     "id": "ethereum-2",
     "name": "goerli",
     "rpcUrl": "https://goerli.infura.io/v3/10de1265f1234c93acfec19ca8f4afd7",
+    "finality": 15,
     "gateway": "0xe432150cce91c13a887f7D836923d5597adD8E31"
   },
   {
     "id": "Avalanche",
     "name": "Avalanche",
     "rpcUrl": "https://rpc.ankr.com/avalanche_fuji",
+    "finality": 1,
     "gateway": "0xC249632c2D40b9001FE907806902f63038B737Ab"
   },
   {
     "id": "Binance",
     "name": "Binance",
+    "finality": 20,
     "rpcUrl": "https://data-seed-prebsc-1-s2.binance.org:8545",
     "gateway": "0x4D147dCb984e6affEEC47e44293DA442580A3Ec0"
   }

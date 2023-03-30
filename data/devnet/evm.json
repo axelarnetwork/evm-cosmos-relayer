@@ -3,6 +3,7 @@
     "id": "ganache-0",
     "name": "ganache-0",
     "rpcUrl": "http://a5c6803b39cd942c3b9daee2847e24fa-1977123350.us-east-2.elb.amazonaws.com:7545",
-    "gateway": "0xE720c5C38028Ca08DA47E179162Eca2DD255B6eC"
+    "gateway": "0xE720c5C38028Ca08DA47E179162Eca2DD255B6eC",
+    "finality": 1
   }
 ]

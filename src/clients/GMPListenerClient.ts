@@ -19,6 +19,7 @@ export class GMPListenerClient {
   private gatewayContract: IAxelarGateway;
   private currentBlock = 0;
   public chainId: string;
+  public finalityBlocks: number;
 
   constructor(evm: EvmNetworkConfig) {
     const provider = new ethers.providers.JsonRpcProvider(evm.rpcUrl);
@@ -27,6 +28,7 @@ export class GMPListenerClient {
       provider
     );
     this.chainId = evm.id;
+    this.finalityBlocks = evm.finality;
   }
 
   private async listenCallContract(
@@ -48,6 +50,12 @@ export class GMPListenerClient {
         logIndex: index,
         sourceChain: this.chainId,
         destinationChain: event.args.destinationChain,
+        waitForFinality: () => {
+          return this.gatewayContract.provider.waitForTransaction(
+            event.transactionHash,
+            this.finalityBlocks
+          );
+        },
         args: filterEventArgs(event),
       });
     });
@@ -69,6 +77,7 @@ export class GMPListenerClient {
       if (event.blockNumber <= this.currentBlock) return;
 
       const receipt = await event.getTransactionReceipt();
+
       const index = receipt.logs.findIndex(
         (log) => log.logIndex === event.logIndex
       );
@@ -79,6 +88,12 @@ export class GMPListenerClient {
         logIndex: index,
         sourceChain: this.chainId,
         destinationChain: event.args.destinationChain,
+        waitForFinality: () => {
+          return this.gatewayContract.provider.waitForTransaction(
+            event.transactionHash,
+            this.finalityBlocks
+          );
+        },
         args: filterEventArgs(event),
       });
     });
@@ -103,6 +118,12 @@ export class GMPListenerClient {
         logIndex: index,
         sourceChain: event.args.sourceChain,
         destinationChain: this.chainId,
+        waitForFinality: () => {
+          return this.gatewayContract.provider.waitForTransaction(
+            event.transactionHash,
+            1
+          );
+        },
         args: filterEventArgs(event),
       });
     });
@@ -127,6 +148,12 @@ export class GMPListenerClient {
         logIndex: index,
         sourceChain: event.args.sourceChain,
         destinationChain: this.chainId,
+        waitForFinality: () => {
+          return this.gatewayContract.provider.waitForTransaction(
+            event.transactionHash,
+            1
+          );
+        },
         args: filterEventArgs(event),
       });
     });

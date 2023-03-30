@@ -1,5 +1,6 @@
 import { Coin } from '@cosmjs/stargate';
 import { Height } from 'cosmjs-types/ibc/core/client/v1/client';
+import { ethers } from 'ethers';
 
 export interface EvmEvent<T> {
   hash: string;
@@ -7,6 +8,7 @@ export interface EvmEvent<T> {
   logIndex: number;
   sourceChain: string;
   destinationChain: string;
+  waitForFinality: () => Promise<ethers.providers.TransactionReceipt>;
   args: T;
 }
 
@@ -41,8 +43,8 @@ export interface PaginationParams {
 }
 
 export interface ExecuteRequest {
-    id: string,
-    payload: string
+  id: string;
+  payload: string;
 }
 
 export interface LinkRequest {
