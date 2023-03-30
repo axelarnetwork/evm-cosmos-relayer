@@ -60,6 +60,7 @@ async function main() {
     .pipe(filterCosmosDestination(cosmosChains))
     .subscribe((event) => {
       prepareHandler(event, 'handleEvmToCosmosEvent')
+        .then(() => event.waitForFinality())
         .then(() => handleEvmToCosmosEvent(axelarClient, event))
         .catch((e) => handleAnyError('handleEvmToCosmosEvent', e));
     });
@@ -68,6 +69,7 @@ async function main() {
     .pipe(filterCosmosDestination(cosmosChains))
     .subscribe((event) => {
       prepareHandler(event, 'handleEvmToCosmosEvent')
+        .then(() => event.waitForFinality())
         .then(() => handleEvmToCosmosEvent(axelarClient, event))
         .catch((e) => handleAnyError('handleEvmToCosmosEvent', e));
     });

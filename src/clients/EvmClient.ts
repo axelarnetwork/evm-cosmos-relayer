@@ -15,6 +15,7 @@ export class EvmClient {
   private gateway: IAxelarGateway;
   private maxRetry: number;
   private retryDelay: number;
+  private finalityBlocks: number;
   chainId: string;
 
   constructor(
@@ -30,10 +31,15 @@ export class EvmClient {
     this.maxRetry = _maxRetry;
     this.retryDelay = _retryDelay;
     this.chainId = chain.id;
+    this.finalityBlocks = chain.finality;
   }
 
   public getSenderAddress() {
     return this.wallet.address;
+  }
+
+  public waitForFinality(txHash: string) {
+    return this.wallet.provider.waitForTransaction(txHash, this.finalityBlocks);
   }
 
   public gatewayExecute(executeData: string) {
