@@ -10,5 +10,11 @@
     "name": "Avalanche",
     "rpcUrl": "https://rpc.ankr.com/avalanche_fuji",
     "gateway": "0xC249632c2D40b9001FE907806902f63038B737Ab"
+  },
+  {
+    "id": "Binance",
+    "name": "Binance",
+    "rpcUrl": "https://data-seed-prebsc-1-s2.binance.org:8545",
+    "gateway": "0x4D147dCb984e6affEEC47e44293DA442580A3Ec0"
   }
 ]
