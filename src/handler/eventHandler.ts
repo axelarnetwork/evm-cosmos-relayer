@@ -118,19 +118,10 @@ export async function handleCosmosToEvmEvent<
 }
 
 export async function handleCosmosToEvmCallContractCompleteEvent(
-  evmClients: EvmClient[],
-  prisma: PrismaClient,
-  event: EvmEvent<ContractCallApprovedEventObject>
+  evmClient: EvmClient,
+  event: EvmEvent<ContractCallApprovedEventObject>,
+  relayDatas: { id: string; payload: string | undefined }[]
 ) {
-  // Find the evm client associated with event's destination chain
-  const evmClient = evmClients.find(
-    (client) =>
-      client.chainId.toLowerCase() === event.destinationChain.toLowerCase()
-  );
-
-  // If no evm client found, return
-  if (!evmClient) return;
-
   const {
     commandId,
     contractAddress,
@@ -139,60 +130,34 @@ export async function handleCosmosToEvmCallContractCompleteEvent(
     payloadHash,
   } = event.args;
 
-
-  const relayDatas = await prisma.relayData.findMany({
-    where: {
-      callContract: {
-        payloadHash,
-        sourceAddress,
-        contractAddress,
-      },
-      status: Status.APPROVED,
-    },
-    orderBy: {
-      updatedAt: 'desc',
-    },
-    select: {
-      callContract: {
-        select: {
-          payload: true,
-        },
-      },
-      id: true,
-    },
-  });
-
-  if (!relayDatas)
-    return logger.info(
+  if (!relayDatas) {
+    logger.info(
       `[handleCosmosToEvmCallContractCompleteEvent]: Cannot find payload from given payloadHash: ${payloadHash}`
     );
+    return undefined;
+  }
 
+  const result = [];
   for (const data of relayDatas) {
-    const { callContract, id } = data;
-    if (!callContract) continue;
+    const { payload, id } = data;
+    if (!payload) continue;
 
     const tx = await evmClient.execute(
       contractAddress,
       commandId,
       sourceChain,
       sourceAddress,
-      callContract.payload
+      payload
     );
 
     if (!tx) {
-      logger.info([
-        '[handleCosmosToEvmCallContractCompleteEvent] execute failed',
+      result.push({
         id,
-      ]);
-      await prisma.relayData.update({
-        where: {
-          id,
-        },
-        data: {
-          status: Status.FAILED,
-          updatedAt: new Date(),
-        },
+        status: Status.FAILED,
       });
+      logger.error(
+        `[handleCosmosToEvmCallContractCompleteEvent] execute failed: ${id}`
+      );
       continue;
     }
 
@@ -202,27 +167,19 @@ export async function handleCosmosToEvmCallContractCompleteEvent(
       )}`
     );
 
-    const executeDb = await prisma.relayData.update({
-      where: {
-        id,
-      },
-      data: {
-        status: Status.SUCCESS,
-        updatedAt: new Date(),
-      },
+    result.push({
+      id,
+      status: Status.SUCCESS,
     });
-
-    logger.info(
-      `[handleCosmosToEvmCallContractCompleteEvent] DBUpdate: ${JSON.stringify(
-        executeDb
-      )}`
-    );
   }
+
+  return result;
 }
 
 export async function handleCosmosToEvmCallContractWithTokenCompleteEvent(
-  evmClients: EvmClient[],
-  event: EvmEvent<ContractCallApprovedWithMintEventObject>
+  evmClient: EvmClient,
+  event: EvmEvent<ContractCallApprovedWithMintEventObject>,
+  relayDatas: { id: string; payload: string | undefined }[]
 ) {
   const {
     amount,
@@ -234,49 +191,24 @@ export async function handleCosmosToEvmCallContractWithTokenCompleteEvent(
     payloadHash,
   } = event.args;
 
-  const evmClient = evmClients.find(
-    (client) => client.chainId === event.destinationChain
-  );
-  if (!evmClient) return;
-
-  const relayDatas = await prisma.relayData.findMany({
-    where: {
-      callContractWithToken: {
-        payloadHash: payloadHash,
-        sourceAddress: sourceAddress,
-        contractAddress: contractAddress,
-        amount: amount.toString(),
-      },
-      status: Status.APPROVED,
-    },
-    orderBy: {
-      updatedAt: 'desc',
-    },
-    select: {
-      callContractWithToken: {
-        select: {
-          payload: true,
-        },
-      },
-      id: true,
-    },
-  });
-
-  if (!relayDatas)
-    return logger.info(
+  if (!relayDatas) {
+    logger.info(
       `[handleCosmosToEvmCallContractWithTokenCompleteEvent]: Cannot find payload from given payloadHash: ${payloadHash}`
     );
+    return undefined;
+  }
 
+  const result = [];
   for (const relayData of relayDatas) {
-    const { callContractWithToken, id } = relayData;
-    if (!callContractWithToken) continue;
+    const { payload, id } = relayData;
+    if (!payload) continue;
 
     const tx = await evmClient.executeWithToken(
       contractAddress,
       commandId,
       sourceChain,
       sourceAddress,
-      callContractWithToken.payload,
+      payload,
       symbol,
       amount.toString()
     );
@@ -286,15 +218,12 @@ export async function handleCosmosToEvmCallContractWithTokenCompleteEvent(
         '[handleCosmosToEvmCallContractWithTokenCompleteEvent] executeWithToken failed',
         id,
       ]);
-      await prisma.relayData.update({
-        where: {
-          id,
-        },
-        data: {
-          status: Status.FAILED,
-          updatedAt: new Date(),
-        },
+
+      result.push({
+        id,
+        status: Status.FAILED,
       });
+
       continue;
     }
 
@@ -304,22 +233,13 @@ export async function handleCosmosToEvmCallContractWithTokenCompleteEvent(
       )}`
     );
 
-    const executeWithTokenDb = await prisma.relayData.update({
-      where: {
-        id,
-      },
-      data: {
-        status: Status.SUCCESS,
-        updatedAt: new Date(),
-      },
+    result.push({
+      id,
+      status: Status.SUCCESS,
     });
-
-    logger.info(
-      `[handleCosmosToEvmCompleteEvent] DBUpdate: ${JSON.stringify(
-        executeWithTokenDb
-      )}`
-    );
   }
+
+  return result;
 }
 
 export async function handleEvmToCosmosCompleteEvent(

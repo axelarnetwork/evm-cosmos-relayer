@@ -10,6 +10,7 @@ import {
   ContractCallWithTokenEventObject,
   ContractCallEventObject,
   ContractCallApprovedEventObject,
+  ContractCallApprovedWithMintEventObject,
 } from '../types/contracts/IAxelarGateway';
 import { logger } from '../logger';
 import { Transaction, ethers } from 'ethers';
@@ -139,6 +140,86 @@ export class DatabaseClient {
         callContractWithToken,
       },
     });
+  }
+
+  async findCosmosToEvmCallContractApproved(
+    event: EvmEvent<ContractCallApprovedEventObject>
+  ) {
+    const { contractAddress, sourceAddress, payloadHash } = event.args;
+
+    const datas = await this.prisma.relayData.findMany({
+      where: {
+        callContract: {
+          payloadHash,
+          sourceAddress,
+          contractAddress,
+        },
+        status: Status.APPROVED,
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+      select: {
+        callContract: {
+          select: {
+            payload: true,
+          },
+        },
+        id: true,
+      },
+    });
+
+    return datas.map((data) => ({
+      id: data.id,
+      payload: data.callContract?.payload,
+    }));
+  }
+
+  async findCosmosToEvmCallContractWithTokenApproved(
+    event: EvmEvent<ContractCallApprovedWithMintEventObject>
+  ) {
+    const { amount, contractAddress, sourceAddress, payloadHash } = event.args;
+
+    const datas = await this.prisma.relayData.findMany({
+      where: {
+        callContractWithToken: {
+          payloadHash: payloadHash,
+          sourceAddress: sourceAddress,
+          contractAddress: contractAddress,
+          amount: amount.toString(),
+        },
+        status: Status.APPROVED,
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+      select: {
+        callContractWithToken: {
+          select: {
+            payload: true,
+          },
+        },
+        id: true,
+      },
+    });
+
+    return datas.map((data) => ({
+      id: data.id,
+      payload: data.callContractWithToken?.payload,
+    }));
+  }
+
+  async updateEventStatus(id: string, status: Status) {
+    const executeDb = await this.prisma.relayData.update({
+      where: {
+        id,
+      },
+      data: {
+        status,
+        updatedAt: new Date(),
+      },
+    });
+    logger.info(`[DBUpdate] ${JSON.stringify(executeDb)}`);
   }
 
   getPrismaClient() {
