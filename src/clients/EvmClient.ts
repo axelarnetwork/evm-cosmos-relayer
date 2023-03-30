@@ -113,7 +113,9 @@ export class EvmClient {
       .sendTransaction(tx)
       .then((t) => t.wait())
       .catch(async (e: any) => {
-        logger.error(`[EvmClient.submitTx] Failed ${e.message}`);
+        logger.error(
+          `[EvmClient.submitTx] Failed ${e.error.reason} to: ${tx.to} data: ${tx.data}`
+        );
         await sleep(this.retryDelay);
         logger.info(`Retrying tx: ${retryAttempt + 1}`);
         return this.submitTx(tx, retryAttempt + 1);
