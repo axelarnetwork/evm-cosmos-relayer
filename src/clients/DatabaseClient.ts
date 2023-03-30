@@ -16,7 +16,7 @@ import { logger } from '../logger';
 import { ethers } from 'ethers';
 
 export class DatabaseClient {
-  prisma: PrismaClient;
+  private prisma: PrismaClient;
 
   constructor() {
     this.prisma = new PrismaClient();
@@ -238,10 +238,6 @@ export class DatabaseClient {
       },
     });
     logger.info(`[DBUpdate] ${JSON.stringify(executeDb)}`);
-  }
-
-  getPrismaClient() {
-    return this.prisma;
   }
 
   connect() {
