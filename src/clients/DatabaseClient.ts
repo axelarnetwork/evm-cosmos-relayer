@@ -149,12 +149,24 @@ export class DatabaseClient {
 
     const datas = await this.prisma.relayData.findMany({
       where: {
-        callContract: {
-          payloadHash,
-          sourceAddress,
-          contractAddress,
-        },
-        status: Status.APPROVED,
+        OR: [
+          {
+            callContract: {
+              payloadHash,
+              sourceAddress,
+              contractAddress,
+            },
+            status: Status.PENDING,
+          },
+          {
+            callContract: {
+              payloadHash,
+              sourceAddress,
+              contractAddress,
+            },
+            status: Status.APPROVED,
+          },
+        ],
       },
       orderBy: {
         updatedAt: 'desc',
@@ -182,13 +194,26 @@ export class DatabaseClient {
 
     const datas = await this.prisma.relayData.findMany({
       where: {
-        callContractWithToken: {
-          payloadHash: payloadHash,
-          sourceAddress: sourceAddress,
-          contractAddress: contractAddress,
-          amount: amount.toString(),
-        },
-        status: Status.APPROVED,
+        OR: [
+          {
+            callContractWithToken: {
+              payloadHash: payloadHash,
+              sourceAddress: sourceAddress,
+              contractAddress: contractAddress,
+              amount: amount.toString(),
+            },
+            status: Status.PENDING,
+          },
+          {
+            callContractWithToken: {
+              payloadHash: payloadHash,
+              sourceAddress: sourceAddress,
+              contractAddress: contractAddress,
+              amount: amount.toString(),
+            },
+            status: Status.PENDING,
+          },
+        ],
       },
       orderBy: {
         updatedAt: 'desc',
