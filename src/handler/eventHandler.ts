@@ -1,4 +1,5 @@
-import { AxelarClient, EvmClient, env, prisma } from '..';
+import { PrismaClient } from '@prisma/client';
+import { AxelarClient, DatabaseClient, EvmClient, env } from '..';
 import { logger } from '../logger';
 import {
   ContractCallSubmitted,
@@ -56,106 +57,13 @@ export async function handleEvmToCosmosEvent(
   vxClient: AxelarClient,
   event: EvmEvent<ContractCallWithTokenEventObject | ContractCallEventObject>
 ) {
-  const id = `${event.hash}-${event.logIndex}`;
-
-  const _args = event.args as any;
-  if (_args.amount) {
-    const args = event.args as ContractCallWithTokenEventObject;
-    await prisma.relayData.create({
-      data: {
-        id,
-        from: event.sourceChain,
-        to: event.destinationChain,
-        callContractWithToken: {
-          create: {
-            payload: event.args.payload,
-            payloadHash: event.args.payloadHash,
-            contractAddress: event.args.destinationContractAddress,
-            sourceAddress: event.args.sender,
-            amount: args.amount.toString(),
-            symbol: args.symbol,
-          },
-        },
-      },
-    });
-  } else {
-    await prisma.relayData.create({
-      data: {
-        id,
-        from: event.sourceChain,
-        to: event.destinationChain,
-        callContract: {
-          create: {
-            payload: event.args.payload,
-            payloadHash: event.args.payloadHash,
-            contractAddress: event.args.destinationContractAddress,
-            sourceAddress: event.args.sender,
-          },
-        },
-      },
-    });
-  }
-
-  // Sent a confirm tx to axelar network.
   const confirmTx = await vxClient.confirmEvmTx(event.sourceChain, event.hash);
   logger.info(
     `[handleEvmToCosmosEvent] Confirmed: ${confirmTx.transactionHash}`
   );
 }
 
-export async function handleCosmosToEvmContractCallEvent(
-  vxClient: AxelarClient,
-  evmClients: EvmClient[],
-  event: IBCEvent<ContractCallSubmitted>
-) {
-  await prisma.relayData.create({
-    data: {
-      id: `${event.args.messageId}`,
-      from: event.args.sourceChain,
-      to: event.args.destinationChain,
-      status: Status.PENDING,
-      callContract: {
-        create: {
-          payload: event.args.payload,
-          payloadHash: event.args.payloadHash,
-          contractAddress: event.args.contractAddress,
-          sourceAddress: event.args.sender,
-        },
-      },
-    },
-  });
-
-  await relayTxToEvmGateway(vxClient, evmClients, event);
-}
-
-export async function handleCosmosToEvmContractCallWithTokenEvent(
-  vxClient: AxelarClient,
-  evmClients: EvmClient[],
-  event: IBCEvent<ContractCallWithTokenSubmitted>
-) {
-  await prisma.relayData.create({
-    data: {
-      id: `${event.args.messageId}`,
-      from: event.args.sourceChain,
-      to: event.args.destinationChain,
-      status: Status.PENDING,
-      callContractWithToken: {
-        create: {
-          payload: event.args.payload,
-          payloadHash: event.args.payloadHash,
-          contractAddress: event.args.contractAddress,
-          sourceAddress: event.args.sender,
-          amount: event.args.amount.toString(),
-          symbol: event.args.symbol,
-        },
-      },
-    },
-  });
-
-  await relayTxToEvmGateway(vxClient, evmClients, event);
-}
-
-async function relayTxToEvmGateway<
+export async function handleCosmosToEvmEvent<
   T extends ContractCallSubmitted | ContractCallWithTokenSubmitted
 >(vxClient: AxelarClient, evmClients: EvmClient[], event: IBCEvent<T>) {
   // Find the evm client associated with event's destination chain
@@ -206,22 +114,12 @@ async function relayTxToEvmGateway<
   if (!tx) return;
   logger.info(`[handleCosmosToEvmEvent] Execute: ${tx.transactionHash}`);
 
-  // update relay data
-  const record = await prisma.relayData.update({
-    where: {
-      id: event.args.messageId,
-    },
-    data: {
-      executeHash: tx.transactionHash,
-      status: Status.APPROVED,
-    },
-  });
-
-  logger.info(`[handleCosmosToEvmEvent] DBUpdate: ${JSON.stringify(record)}`);
+  return tx;
 }
 
 export async function handleCosmosToEvmCallContractCompleteEvent(
   evmClients: EvmClient[],
+  prisma: PrismaClient,
   event: EvmEvent<ContractCallApprovedEventObject>
 ) {
   // Find the evm client associated with event's destination chain
@@ -240,6 +138,7 @@ export async function handleCosmosToEvmCallContractCompleteEvent(
     sourceChain,
     payloadHash,
   } = event.args;
+
 
   const relayDatas = await prisma.relayData.findMany({
     where: {
@@ -448,9 +347,13 @@ export async function handleEvmToCosmosCompleteEvent(
   logger.info(`[handleEvmToCosmosCompleteEvent] Memo: ${event.memo}`);
 }
 
-export async function prepareHandler(event: any, label = '') {
+export async function prepareHandler(
+  event: any,
+  db: DatabaseClient,
+  label = ''
+) {
   // reconnect prisma db
-  await prisma.$connect();
+  await db.connect();
 
   // log event
   logger.info(`[${label}] EventReceived ${JSON.stringify(event)}`);
