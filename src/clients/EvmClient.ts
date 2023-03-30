@@ -56,6 +56,48 @@ export class EvmClient {
     return this.gateway.isCommandExecuted(commandId);
   }
 
+  // warning: this function should be called after the command is executed, otherwise it will always return false
+  public isCallContractExecuted(
+    commandId: string,
+    sourceChain: string,
+    sourceAddress: string,
+    contractAddress: string,
+    payloadHash: string
+  ) {
+    return this.gateway
+      .isContractCallApproved(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        contractAddress,
+        payloadHash
+      )
+      .then((unexecuted) => !unexecuted);
+  }
+
+  // warning: this function should be called after the command is executed, otherwise it will always return false
+  public isCallContractWithTokenExecuted(
+    commandId: string,
+    sourceChain: string,
+    sourceAddress: string,
+    contractAddress: string,
+    payloadHash: string,
+    symbol: string,
+    amount: string
+  ) {
+    return this.gateway
+      .isContractCallAndMintApproved(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        contractAddress,
+        payloadHash,
+        symbol,
+        amount
+      )
+      .then((unexecuted) => !unexecuted);
+  }
+
   public execute(
     contractAddress: string,
     commandId: string,
@@ -121,7 +163,7 @@ export class EvmClient {
           `[EvmClient.submitTx] Failed ${e.error.reason} to: ${tx.to} data: ${tx.data}`
         );
         await sleep(this.retryDelay);
-        logger.info(`Retrying tx: ${retryAttempt + 1}`);
+        logger.debug(`Retrying tx: ${retryAttempt + 1}`);
         return this.submitTx(tx, retryAttempt + 1);
       });
   }
