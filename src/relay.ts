@@ -4,6 +4,7 @@ import { axelarChain, cosmosChains, evmChains } from './config';
 import {
   ContractCallSubmitted,
   ContractCallWithTokenSubmitted,
+  EvmEvent,
   ExecuteRequest,
   IBCPacketEvent,
 } from './types';
@@ -27,6 +28,7 @@ import {
 import { initServer } from './api';
 import { logger } from './logger';
 import { createCosmosEventSubject, createEvmEventSubject } from './subject';
+import { filterCosmosDestination } from './utils/filterUtils';
 
 const sEvmCallContract = createEvmEventSubject<ContractCallEventObject>();
 const sEvmCallContractWithToken =
@@ -55,13 +57,15 @@ async function main() {
   // Subscribe to the ContractCallWithToken event at the gateway contract (EVM -> Cosmos direction)
   // Filter the event by the supported cosmos chains. This is to avoid conflict with existing relayers that relay to evm chains.
   sEvmCallContractWithToken
-    .pipe(
-      filter((event) =>
-        cosmosChains
-          .map((chain) => chain.chainId)
-          .includes(event.args.destinationChain)
-      )
-    )
+    .pipe(filterCosmosDestination(cosmosChains))
+    .subscribe((event) => {
+      prepareHandler(event, 'handleEvmToCosmosEvent')
+        .then(() => handleEvmToCosmosEvent(axelarClient, event))
+        .catch((e) => handleAnyError('handleEvmToCosmosEvent', e));
+    });
+
+  sEvmCallContract
+    .pipe(filterCosmosDestination(cosmosChains))
     .subscribe((event) => {
       prepareHandler(event, 'handleEvmToCosmosEvent')
         .then(() => handleEvmToCosmosEvent(axelarClient, event))
