@@ -52,6 +52,10 @@ export class EvmClient {
     });
   }
 
+  public isExecuted(commandId: string) {
+    return this.gateway.isCommandExecuted(commandId);
+  }
+
   public execute(
     contractAddress: string,
     commandId: string,

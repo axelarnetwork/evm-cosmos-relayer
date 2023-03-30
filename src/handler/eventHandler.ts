@@ -94,6 +94,13 @@ export async function handleCosmosToEvmEvent<
   if (pendingCommands.length === 0) return;
 
   const signCommand = await vxClient.signCommands(event.args.destinationChain);
+  logger.debug(
+    `[handleCosmosToEvmEvent] SignCommand: ${JSON.stringify(signCommand)}`
+  );
+
+  if (signCommand.rawLog.includes('failed')) {
+    throw new Error(signCommand.rawLog);
+  }
 
   const batchedCommandId = getBatchCommandIdFromSignTx(signCommand);
   logger.info(`[handleCosmosToEvmEvent] BatchCommandId: ${batchedCommandId}`);
@@ -139,6 +146,19 @@ export async function handleCosmosToEvmCallContractCompleteEvent(
     const { payload, id } = data;
     if (!payload) continue;
 
+    // check if already executed
+    const isExecuted = await evmClient.isExecuted(commandId);
+    if (isExecuted) {
+      result.push({
+        id,
+        status: Status.SUCCESS,
+      });
+      logger.info(
+        `[handleCosmosToEvmCallContractCompleteEvent] Already executed: ${id}. Will mark the status in the DB as Success.`
+      );
+      continue;
+    }
+
     const tx = await evmClient.execute(
       contractAddress,
       commandId,
@@ -153,7 +173,7 @@ export async function handleCosmosToEvmCallContractCompleteEvent(
         status: Status.FAILED,
       });
       logger.error(
-        `[handleCosmosToEvmCallContractCompleteEvent] execute failed: ${id}`
+        `[handleCosmosToEvmCallContractCompleteEvent] Execute failed: ${id}. Will mark the status in the DB as Failed.`
       );
       continue;
     }
