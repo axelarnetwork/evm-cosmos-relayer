@@ -243,24 +243,6 @@ export async function handleEvmToCosmosCompleteEvent(
   client: AxelarClient,
   event: IBCPacketEvent
 ) {
-  // const record = await prisma.relayData
-  //   .update({
-  //     where: {
-  //       packetSequence: event.sequence,
-  //     },
-  //     data: {
-  //       status: Status.SUCCESS,
-  //       executeHash: event.hash,
-  //       updatedAt: new Date(),
-  //     },
-  //   })
-  //   .catch((err: any) => {
-  //     logger.error(`[handleEvmToCosmosCompleteEvent] ${err.message}`);
-  //   });
-  // logger.info(
-  //   `[handleEvmToCosmosCompleteEvent] DBUpdate: ${JSON.stringify(record)}`
-  // );
-
   logger.info(`[handleEvmToCosmosCompleteEvent] Memo: ${event.memo}`);
 }
 
