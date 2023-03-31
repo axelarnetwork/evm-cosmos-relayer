@@ -1,6 +1,6 @@
 import ReconnectingWebSocket from 'reconnecting-websocket';
-import { Subject } from 'rxjs';
 import WebSocket from 'isomorphic-ws';
+import { Subject } from 'rxjs';
 import { DatabaseClient } from '../..';
 import { AxelarEvent } from './eventTypes';
 import { logger } from '../../logger';
@@ -36,6 +36,9 @@ export class AxelarListener {
   public listen<T>(event: AxelarEvent<T>, subject: Subject<T>) {
     const ws = this.getWs(event.topicId);
     ws.reconnect();
+    logger.info(
+      `[AxelarListener] Subscribed to ${event.type} topic on axelar network`
+    );
     ws.send(
       JSON.stringify({
         jsonrpc: '2.0',
@@ -51,9 +54,13 @@ export class AxelarListener {
       // check if the event topic is matched
       if (!_event.result || _event.result.query !== event.topicId) return;
 
+      logger.debug(`[AxelarListener] Received ${ev.type} event.`);
+
       // parse the event data
       try {
-        event.parseEvent(_event.result.events).then(subject.next);
+        event.parseEvent(_event.result.events).then((ev) => {
+          subject.next(ev);
+        });
       } catch (e) {
         logger.error(
           `[AxelarListener] Failed to parse topic ${event.topicId} GMP event: ${e}`
