@@ -14,6 +14,12 @@ import {
   IBCPacketEvent,
 } from './types';
 import {
+  AxelarCosmosContractCallEvent,
+  AxelarCosmosContractCallWithTokenEvent,
+  AxelarEVMCompletedEvent,
+  AxelarIBCCompleteEvent,
+} from './listeners';
+import {
   ContractCallEventObject,
   ContractCallApprovedEventObject,
   ContractCallWithTokenEventObject,
@@ -36,6 +42,7 @@ import {
   filterCosmosDestination,
   mapEventToEvmClient,
 } from './utils/operatorUtils';
+import { AxelarListener } from './listeners/AxelarListener';
 
 const sEvmCallContract = createEvmEventSubject<ContractCallEventObject>();
 const sEvmCallContractWithToken =
@@ -53,7 +60,10 @@ const sCosmosContractCallWithToken =
 // Listening to the IBC packet event. This mean the any gmp flow (both contractCall and contractCallWithToken) from evm -> cosmos is completed.
 const sCosmosApproveAny = new Subject<IBCPacketEvent>();
 
+// Initialize DB client
 const db = new DatabaseClient();
+
+const axelarListener = new AxelarListener(db, axelarChain.ws);
 
 async function main() {
   const listeners = evmChains.map((evm) => new GMPListenerClient(evm));
@@ -225,12 +235,10 @@ async function main() {
     );
   }
 
-  axelarClient.listenForCosmosGMP(
-    sCosmosContractCall,
-    sCosmosContractCallWithToken
-  );
-  axelarClient.listenForIBCComplete(sCosmosApproveAny);
-  axelarClient.listenForEvmEventCompleted(sEvmConfirmEvent);
+  axelarListener.listen(AxelarCosmosContractCallEvent, sCosmosContractCall);
+  axelarListener.listen(AxelarCosmosContractCallWithTokenEvent, sCosmosContractCallWithToken)
+  axelarListener.listen(AxelarIBCCompleteEvent, sCosmosApproveAny)
+  axelarListener.listen(AxelarEVMCompletedEvent, sEvmConfirmEvent)
 }
 
 logger.info('Starting relayer server...');
