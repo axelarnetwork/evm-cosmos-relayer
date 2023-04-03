@@ -1,5 +1,5 @@
 import { Wallet, ethers } from 'ethers';
-import { EvmNetworkConfig } from '../config/types';
+import { EvmNetworkConfig } from 'config';
 import {
   IAxelarGateway__factory,
   IAxelarGateway,
@@ -7,7 +7,7 @@ import {
   IAxelarExecutable__factory,
 } from '../types/contracts';
 import { env } from '..';
-import { sleep } from '../utils/utils';
+import { sleep } from './sleep';
 import { logger } from '../logger';
 
 export class EvmClient {

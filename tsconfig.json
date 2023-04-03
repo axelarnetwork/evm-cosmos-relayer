@@ -8,7 +8,8 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "rootDir": ".",
-    "outDir": "dist"
+    "outDir": "dist",
+    "baseUrl": "src"
   },
   "include": ["src/**/*", "data/*.json"],
   "exclude": ["node_modules", "src/__tests__"]

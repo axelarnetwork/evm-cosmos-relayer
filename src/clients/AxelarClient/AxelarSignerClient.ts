@@ -1,23 +1,24 @@
-import { CosmosNetworkConfig } from '../config/types';
-import { axelarChain, env } from '../config';
+import { CosmosNetworkConfig, axelarChain, env } from '../../config';
 import { AxelarSigningClient, Environment } from '@axelar-network/axelarjs-sdk';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { StdFee } from '@cosmjs/stargate';
 import { GasPrice } from '@cosmjs/stargate';
+import { DeliverTxResponse } from '@cosmjs/stargate';
 import { MsgTransfer } from '@axelar-network/axelarjs-types/ibc/applications/transfer/v1/tx';
 import {
   AxelarQueryClient,
   AxelarQueryClientType,
 } from '@axelar-network/axelarjs-sdk/dist/src/libs/AxelarQueryClient';
-import { sleep } from '../utils/utils';
+import { sleep } from '../sleep';
 import { Registry } from '@cosmjs/proto-signing';
-import { logger } from '../logger';
 import {
   ExecuteMessageRequest,
   protobufPackage as AxelarProtobufPackage,
 } from '@axelar-network/axelarjs-types/axelar/axelarnet/v1beta1/tx';
+import { logger } from '../../logger';
 
-export class SigningClient {
+//
+export class SignerClient {
   public config: CosmosNetworkConfig;
   public sdk: AxelarSigningClient;
   public queryClient: AxelarQueryClientType;
@@ -68,7 +69,7 @@ export class SigningClient {
       },
     });
 
-    return new SigningClient(sdk, _queryClient, config);
+    return new SignerClient(sdk, _queryClient, config);
   }
 
   public getAddress() {
@@ -83,22 +84,18 @@ export class SigningClient {
     payload: T,
     memo?: string,
     retries = 0
-  ): Promise<any> {
+  ): Promise<DeliverTxResponse> {
     if (retries >= this.maxRetries) throw new Error('Max retries exceeded');
-    return this.sdk
-      .signThenBroadcast(payload, this.fee, memo)
-      .catch(async (e: any) => {
-        if (e.message.includes('account sequence mismatch')) {
-          logger.info(
-            `Account sequence mismatch, retrying in ${
-              this.retryDelay / 1000
-            } seconds...`
-          );
-          await sleep(this.retryDelay);
-          return this.broadcast(payload, memo, retries + 1);
-        }
+    return this.sdk.signThenBroadcast(payload, this.fee, memo).catch(async (e: any) => {
+      if (e.message.includes('account sequence mismatch')) {
+        logger.info(`Account sequence mismatch, retrying in ${this.retryDelay / 1000} seconds...`);
+        await sleep(this.retryDelay);
+        return this.broadcast(payload, memo, retries + 1);
+      }
 
-        throw e;
-      });
+      throw e;
+    });
   }
+
+
 }
