@@ -61,7 +61,7 @@ export class AxelarListener {
           subject.next(ev);
         })
         .catch((e) => {
-          logger.error(`[AxelarListener] Failed to parse topic ${event.topicId} GMP event: ${e}`);
+          logger.debug(`[AxelarListener] Failed to parse topic ${event.topicId} GMP event: ${e}`);
         });
     });
   }

@@ -17,7 +17,7 @@ export class Parser {
 
   parseEvmEventCompletedEvent = async (event: any): Promise<ExecuteRequest> => {
     const eventId = removeQuote(event['axelar.evm.v1beta1.EVMEventCompleted.event_id'][0]);
-    const errorMsg = `[EVMEventCompleted] Not found eventId: ${eventId} in DB. Skip to handle an event.`;
+    const errorMsg = `Not found eventId: ${eventId} in DB. Skip to handle an event.`;
 
     const payload = await this.db.findRelayDataById(eventId).then((data) => {
         return data?.callContract?.payload || data?.callContractWithToken?.payload;
