@@ -44,7 +44,7 @@ export function getConfirmGatewayTxPayload(
   ];
 }
 
-export function getExecuteMessageRequest(
+export function getRouteMessageRequest(
   sender: string,
   txHash: string,
   logIndex: number,
@@ -52,7 +52,7 @@ export function getExecuteMessageRequest(
 ) {
   return [
     {
-      typeUrl: `/${AxelarProtobufPackage}.ExecuteMessageRequest`,
+      typeUrl: `/${AxelarProtobufPackage}.RouteMessageRequest`,
       value: ExecuteMessageRequest.fromPartial({
         sender: toAccAddress(sender),
         payload: fromHex(payload.slice(2)),
