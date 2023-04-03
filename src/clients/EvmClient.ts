@@ -1,5 +1,5 @@
 import { Wallet, ethers } from 'ethers';
-import { EvmNetworkConfig } from '../config/types';
+import { EvmNetworkConfig } from 'config';
 import {
   IAxelarGateway__factory,
   IAxelarGateway,

@@ -1,15 +1,16 @@
 import { StdFee } from '@cosmjs/stargate';
 import ReconnectingWebSocket from 'reconnecting-websocket';
-import { CosmosNetworkConfig } from 'config/types';
+import { CosmosNetworkConfig } from 'config';
+import { DeliverTxResponse, isDeliverTxFailure, isDeliverTxSuccess } from '@cosmjs/stargate';
 import {
   getConfirmGatewayTxPayload,
   getExecuteMessageRequest,
   getSignCommandPayload,
-} from 'utils/payloadBuilder';
-import { sleep } from 'clients/sleep';
+} from '../../utils/payloadBuilder';
+import { sleep } from '../../clients/sleep';
 import { sha256 } from 'ethers/lib/utils';
 import { DatabaseClient } from 'clients';
-import { logger } from 'logger';
+import { logger } from '../../logger';
 import { SignerClient } from './AxelarSignerClient';
 
 export class AxelarClient {
@@ -82,6 +83,7 @@ export class AxelarClient {
         );
       }
       logger.error(`[AxelarClient.executeMessageRequest] Failed to broadcast ${e.message}`);
+      return undefined
     });
   }
 
@@ -95,5 +97,13 @@ export class AxelarClient {
 
   public async getBalance(address: string, denom?: string) {
     return this.signingClient.getBalance(address, denom);
+  }
+
+  public isTxSuccess(tx: DeliverTxResponse) {
+    return isDeliverTxSuccess(tx);
+  }
+
+  public isTxFailed(tx: DeliverTxResponse) {
+    return isDeliverTxFailure(tx);
   }
 }
