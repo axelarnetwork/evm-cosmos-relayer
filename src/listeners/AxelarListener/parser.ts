@@ -1,13 +1,19 @@
-import { DatabaseClient } from '../..';
-import { logger } from '../../logger';
+import { DatabaseClient } from 'clients';
 import {
   ContractCallSubmitted,
   ContractCallWithTokenSubmitted,
   ExecuteRequest,
   IBCEvent,
   IBCPacketEvent,
-} from '../../types';
-import { decodeBase64, removeQuote } from '../../utils/utils';
+} from 'types';
+
+const decodeBase64 = (str: string) => {
+  return Buffer.from(str, 'base64').toString('hex');
+};
+
+const removeQuote = (str: string) => {
+  return str.replace(/['"]+/g, '');
+};
 
 export class Parser {
   private db: DatabaseClient;
@@ -20,7 +26,7 @@ export class Parser {
     const errorMsg = `Not found eventId: ${eventId} in DB. Skip to handle an event.`;
 
     const payload = await this.db.findRelayDataById(eventId).then((data) => {
-        return data?.callContract?.payload || data?.callContractWithToken?.payload;
+      return data?.callContract?.payload || data?.callContractWithToken?.payload;
     });
 
     if (!payload) throw new Error(errorMsg);
