@@ -29,7 +29,7 @@ export class EvmListener {
     subject: Subject<EvmEvent<EventObject>>
   ) {
     logger.info(
-      `[EVMListener] [${this.chainId}] Subscribed to "${event.name}" event`
+      `[EVMListener] [${this.chainId}] Listening to "${event.name}" event`
     );
     const filter = event.getEventFilter(this.gatewayContract);
     this.gatewayContract.on(filter, async (...args) => {

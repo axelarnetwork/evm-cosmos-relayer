@@ -37,7 +37,7 @@ export class AxelarListener {
     const ws = this.getWs(event.topicId);
     ws.reconnect();
     logger.info(
-      `[AxelarListener] Subscribed to "${event.type}" event`
+      `[AxelarListener] Listening to "${event.type}" event`
     );
     ws.send(
       JSON.stringify({
