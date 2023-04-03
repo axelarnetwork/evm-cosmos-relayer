@@ -1,10 +1,5 @@
 import { Subject, mergeMap } from 'rxjs';
-import {
-  GMPListenerClient,
-  AxelarClient,
-  EvmClient,
-  DatabaseClient,
-} from './clients';
+import { GMPListenerClient, AxelarClient, EvmClient, DatabaseClient } from './clients';
 import { axelarChain, cosmosChains, evmChains } from './config';
 import {
   ContractCallSubmitted,
@@ -38,24 +33,25 @@ import {
 import { initServer } from './api';
 import { logger } from './logger';
 import { createCosmosEventSubject, createEvmEventSubject } from './subject';
-import {
-  filterCosmosDestination,
-  mapEventToEvmClient,
-} from './utils/operatorUtils';
+import { filterCosmosDestination, mapEventToEvmClient } from './utils/operatorUtils';
 import { AxelarListener } from './listeners/AxelarListener';
+import {
+  EvmContractCallApprovedEvent,
+  EvmContractCallEvent,
+  EvmContractCallWithTokenApprovedEvent,
+  EvmContractCallWithTokenEvent,
+  EvmListener,
+} from './listeners/EvmListener';
 
 const sEvmCallContract = createEvmEventSubject<ContractCallEventObject>();
-const sEvmCallContractWithToken =
-  createEvmEventSubject<ContractCallWithTokenEventObject>();
+const sEvmCallContractWithToken = createEvmEventSubject<ContractCallWithTokenEventObject>();
 
 const sEvmConfirmEvent = new Subject<ExecuteRequest>();
 const sEvmApproveContractCallWithToken =
   createEvmEventSubject<ContractCallApprovedWithMintEventObject>();
-const sEvmApproveContractCall =
-  createEvmEventSubject<ContractCallApprovedEventObject>();
+const sEvmApproveContractCall = createEvmEventSubject<ContractCallApprovedEventObject>();
 const sCosmosContractCall = createCosmosEventSubject<ContractCallSubmitted>();
-const sCosmosContractCallWithToken =
-  createCosmosEventSubject<ContractCallWithTokenSubmitted>();
+const sCosmosContractCallWithToken = createCosmosEventSubject<ContractCallWithTokenSubmitted>();
 
 // Listening to the IBC packet event. This mean the any gmp flow (both contractCall and contractCallWithToken) from evm -> cosmos is completed.
 const sCosmosApproveAny = new Subject<IBCPacketEvent>();
@@ -66,7 +62,7 @@ const db = new DatabaseClient();
 const axelarListener = new AxelarListener(db, axelarChain.ws);
 
 async function main() {
-  const listeners = evmChains.map((evm) => new GMPListenerClient(evm));
+  const evmListeners = evmChains.map((evm) => new EvmListener(evm));
   const axelarClient = await AxelarClient.init(db, axelarChain);
   const evmClients = evmChains.map((evm) => new EvmClient(evm));
   //   const cosmosClients = cosmosChains.map((cosmos) => AxelarClient.init(cosmos));
@@ -114,11 +110,7 @@ async function main() {
       .then(() => handleEvmToCosmosConfirmEvent(axelarClient, executeParams))
       // Update the event status in the database
       .then(({ status, packetSequence }) =>
-        db.updateEventStatusWithPacketSequence(
-          executeParams.id,
-          status,
-          packetSequence
-        )
+        db.updateEventStatusWithPacketSequence(executeParams.id, status, packetSequence)
       )
       // catch any error
       .catch((e) => handleAnyError(db, 'handleEvmToCosmosConfirmEvent', e));
@@ -166,35 +158,19 @@ async function main() {
     .pipe(mergeMap((event) => mapEventToEvmClient(event, evmClients)))
     .subscribe(({ evmClient, event }) => {
       const ev = event as EvmEvent<ContractCallApprovedWithMintEventObject>;
-      prepareHandler(
-        event,
-        db,
-        'handleCosmosToEvmCallContractWithTokenCompleteEvent'
-      )
+      prepareHandler(event, db, 'handleCosmosToEvmCallContractWithTokenCompleteEvent')
         // Find the array of relay data associated with the event from the database
         .then(() => db.findCosmosToEvmCallContractWithTokenApproved(ev))
         // Handle the event by calling executeWithToken function at the destination contract.
         .then((relayDatas) =>
-          handleCosmosToEvmCallContractWithTokenCompleteEvent(
-            evmClient,
-            ev,
-            relayDatas
-          )
+          handleCosmosToEvmCallContractWithTokenCompleteEvent(evmClient, ev, relayDatas)
         )
         // Update the event status in the database
         .then((results) =>
-          results?.forEach((result) =>
-            db.updateEventStatus(result.id, result.status)
-          )
+          results?.forEach((result) => db.updateEventStatus(result.id, result.status))
         )
         // catch any error
-        .catch((e) =>
-          handleAnyError(
-            db,
-            'handleCosmosToEvmCallContractWithTokenCompleteEvent',
-            e
-          )
-        );
+        .catch((e) => handleAnyError(db, 'handleCosmosToEvmCallContractWithTokenCompleteEvent', e));
     });
 
   // Subscribe to the ContractCallApproved event at the gateway contract. (Cosmos -> EVM direction)
@@ -207,38 +183,28 @@ async function main() {
         .then(() => db.findCosmosToEvmCallContractApproved(event))
         // Handle the event by calling execute function at the destination contract.
         .then((relayDatas) =>
-          handleCosmosToEvmCallContractCompleteEvent(
-            evmClient,
-            event,
-            relayDatas
-          )
+          handleCosmosToEvmCallContractCompleteEvent(evmClient, event, relayDatas)
         )
         // Update the event status in the database
         .then((results) =>
-          results?.forEach((result) =>
-            db.updateEventStatus(result.id, result.status)
-          )
+          results?.forEach((result) => db.updateEventStatus(result.id, result.status))
         )
-        .catch((e) =>
-          handleAnyError(db, 'handleCosmosToEvmCallContractCompleteEvent', e)
-        );
+        .catch((e) => handleAnyError(db, 'handleCosmosToEvmCallContractCompleteEvent', e));
     });
 
   // ########## Listens for events ##########
 
-  for (const listener of listeners) {
-    listener.listenForEvmGMP(
-      sEvmCallContract,
-      sEvmCallContractWithToken,
-      sEvmApproveContractCallWithToken,
-      sEvmApproveContractCall
-    );
+  for (const evmListener of evmListeners) {
+    evmListener.listen(EvmContractCallEvent, sEvmCallContract);
+    evmListener.listen(EvmContractCallWithTokenEvent, sEvmCallContractWithToken);
+    evmListener.listen(EvmContractCallApprovedEvent, sEvmApproveContractCall);
+    evmListener.listen(EvmContractCallWithTokenApprovedEvent, sEvmApproveContractCallWithToken);
   }
 
   axelarListener.listen(AxelarCosmosContractCallEvent, sCosmosContractCall);
-  axelarListener.listen(AxelarCosmosContractCallWithTokenEvent, sCosmosContractCallWithToken)
-  axelarListener.listen(AxelarIBCCompleteEvent, sCosmosApproveAny)
-  axelarListener.listen(AxelarEVMCompletedEvent, sEvmConfirmEvent)
+  axelarListener.listen(AxelarCosmosContractCallWithTokenEvent, sCosmosContractCallWithToken);
+  axelarListener.listen(AxelarIBCCompleteEvent, sCosmosApproveAny);
+  axelarListener.listen(AxelarEVMCompletedEvent, sEvmConfirmEvent);
 }
 
 logger.info('Starting relayer server...');
