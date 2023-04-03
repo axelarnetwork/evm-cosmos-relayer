@@ -9,7 +9,7 @@ const myFormat = printf(({ level, message, label, timestamp }) => {
 
 const baseFormats = [timestamp(), prettyPrint()];
 
-const loggerLevel = env.DEV ? 'debug' : 'info';
+const loggerLevel = env.LOG_LEVEL;
 export const logger = createLogger({
   level: loggerLevel,
   format: combine(label({ label: 'relayer' }), ...baseFormats),
