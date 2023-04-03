@@ -1,5 +1,5 @@
 import { Subject, mergeMap } from 'rxjs';
-import { GMPListenerClient, AxelarClient, EvmClient, DatabaseClient } from './clients';
+import { AxelarClient, EvmClient, DatabaseClient } from './clients';
 import { axelarChain, cosmosChains, evmChains } from './config';
 import {
   ContractCallSubmitted,
@@ -13,6 +13,12 @@ import {
   AxelarCosmosContractCallWithTokenEvent,
   AxelarEVMCompletedEvent,
   AxelarIBCCompleteEvent,
+  EvmContractCallApprovedEvent,
+  EvmContractCallEvent,
+  EvmContractCallWithTokenApprovedEvent,
+  EvmContractCallWithTokenEvent,
+  EvmListener,
+  AxelarListener,
 } from './listeners';
 import {
   ContractCallEventObject,
@@ -34,19 +40,9 @@ import { initServer } from './api';
 import { logger } from './logger';
 import { createCosmosEventSubject, createEvmEventSubject } from './subject';
 import { filterCosmosDestination, mapEventToEvmClient } from './utils/operatorUtils';
-import { AxelarListener } from './listeners/AxelarListener';
-import {
-  EvmContractCallApprovedEvent,
-  EvmContractCallEvent,
-  EvmContractCallWithTokenApprovedEvent,
-  EvmContractCallWithTokenEvent,
-  EvmListener,
-} from './listeners/EvmListener';
 
 const sEvmCallContract = createEvmEventSubject<ContractCallEventObject>();
 const sEvmCallContractWithToken = createEvmEventSubject<ContractCallWithTokenEventObject>();
-
-const sEvmConfirmEvent = new Subject<ExecuteRequest>();
 const sEvmApproveContractCallWithToken =
   createEvmEventSubject<ContractCallApprovedWithMintEventObject>();
 const sEvmApproveContractCall = createEvmEventSubject<ContractCallApprovedEventObject>();
@@ -54,14 +50,14 @@ const sCosmosContractCall = createCosmosEventSubject<ContractCallSubmitted>();
 const sCosmosContractCallWithToken = createCosmosEventSubject<ContractCallWithTokenSubmitted>();
 
 // Listening to the IBC packet event. This mean the any gmp flow (both contractCall and contractCallWithToken) from evm -> cosmos is completed.
+const sEvmConfirmEvent = new Subject<ExecuteRequest>();
 const sCosmosApproveAny = new Subject<IBCPacketEvent>();
 
 // Initialize DB client
 const db = new DatabaseClient();
 
-const axelarListener = new AxelarListener(db, axelarChain.ws);
-
 async function main() {
+  const axelarListener = new AxelarListener(db, axelarChain.ws);
   const evmListeners = evmChains.map((evm) => new EvmListener(evm));
   const axelarClient = await AxelarClient.init(db, axelarChain);
   const evmClients = evmChains.map((evm) => new EvmClient(evm));
