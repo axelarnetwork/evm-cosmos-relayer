@@ -2,7 +2,7 @@ import ReconnectingWebSocket from 'reconnecting-websocket';
 import WebSocket from 'isomorphic-ws';
 import { Subject } from 'rxjs';
 import { DatabaseClient } from '../..';
-import { AxelarEvent } from './eventTypes';
+import { AxelarListenerEvent } from './eventTypes';
 import { logger } from '../../logger';
 
 export class AxelarListener {
@@ -33,7 +33,7 @@ export class AxelarListener {
     return ws;
   }
 
-  public listen<T>(event: AxelarEvent<T>, subject: Subject<T>) {
+  public listen<T>(event: AxelarListenerEvent<T>, subject: Subject<T>) {
     const ws = this.getWs(event.topicId);
     ws.reconnect();
     logger.info(

@@ -16,22 +16,28 @@ export class Parser {
   }
 
   parseEvmEventCompletedEvent = async (event: any): Promise<ExecuteRequest> => {
-    const eventId = removeQuote(
-      event['axelar.evm.v1beta1.EVMEventCompleted.event_id'][0]
-    );
+    const eventId = removeQuote(event['axelar.evm.v1beta1.EVMEventCompleted.event_id'][0]);
 
-    const payload = await this.db.findRelayDataById(eventId).then((data) => {
-      if (data) {
-        const payload =
-          data.callContract?.payload || data.callContractWithToken?.payload;
+    const payload = await this.db
+      .findRelayDataById(eventId)
+      .then((data) => {
+        if (data) {
+          const payload = data.callContract?.payload || data.callContractWithToken?.payload;
 
-        if (!payload) {
-          logger.debug('Cannot find payload in the DB.');
+          if (!payload) {
+            throw new Error(
+              `[EVMEventCompleted] Not found eventId: ${eventId} in DB. Skip to handle an event.`
+            );
+          }
+
+          return payload;
         }
-
-        return payload;
-      }
-    });
+      })
+      .catch(() => {
+        throw new Error(
+          `[EVMEventCompleted] Not found eventId: ${eventId} in DB. Skip to handle an event.`
+        );
+      });
 
     return {
       id: eventId,
@@ -39,9 +45,7 @@ export class Parser {
     };
   };
 
-  parseContractCallSubmittedEvent = (
-    event: any
-  ): Promise<IBCEvent<ContractCallSubmitted>> => {
+  parseContractCallSubmittedEvent = (event: any): Promise<IBCEvent<ContractCallSubmitted>> => {
     const key = 'axelar.axelarnet.v1beta1.ContractCallSubmitted';
     const data = {
       messageId: removeQuote(event[`${key}.message_id`][0]),
@@ -50,9 +54,7 @@ export class Parser {
       destinationChain: removeQuote(event[`${key}.destination_chain`][0]),
       contractAddress: removeQuote(event[`${key}.contract_address`][0]),
       payload: `0x${decodeBase64(removeQuote(event[`${key}.payload`][0]))}`,
-      payloadHash: `0x${decodeBase64(
-        removeQuote(event[`${key}.payload_hash`][0])
-      )}`,
+      payloadHash: `0x${decodeBase64(removeQuote(event[`${key}.payload_hash`][0]))}`,
     };
 
     return Promise.resolve({
@@ -77,9 +79,7 @@ export class Parser {
       amount: asset.amount.toString(),
       symbol: asset.denom,
       payload: `0x${decodeBase64(removeQuote(event[`${key}.payload`][0]))}`,
-      payloadHash: `0x${decodeBase64(
-        removeQuote(event[`${key}.payload_hash`][0])
-      )}`,
+      payloadHash: `0x${decodeBase64(removeQuote(event[`${key}.payload_hash`][0]))}`,
     };
 
     return Promise.resolve({

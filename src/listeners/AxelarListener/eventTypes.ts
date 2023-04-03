@@ -8,7 +8,7 @@ import {
 } from '../../types';
 import { Parser } from './parser';
 
-export interface AxelarEvent<T> {
+export interface AxelarListenerEvent<T> {
   type: string;
   topicId: string;
   parseEvent: (event: any) => Promise<T>;
@@ -16,14 +16,14 @@ export interface AxelarEvent<T> {
 
 const parser = new Parser(new DatabaseClient());
 
-export const AxelarEVMCompletedEvent: AxelarEvent<ExecuteRequest> = {
+export const AxelarEVMCompletedEvent: AxelarListenerEvent<ExecuteRequest> = {
   type: 'axelar.evm.v1beta1.EVMEventCompleted',
   topicId:
     "tm.event='NewBlock' AND axelar.evm.v1beta1.EVMEventCompleted.event_id EXISTS",
   parseEvent: parser.parseEvmEventCompletedEvent,
 };
 
-export const AxelarCosmosContractCallEvent: AxelarEvent<
+export const AxelarCosmosContractCallEvent: AxelarListenerEvent<
   IBCEvent<ContractCallSubmitted>
 > = {
   type: 'axelar.axelarnet.v1beta1.ContractCallSubmitted',
@@ -31,7 +31,7 @@ export const AxelarCosmosContractCallEvent: AxelarEvent<
   parseEvent: parser.parseContractCallSubmittedEvent,
 };
 
-export const AxelarCosmosContractCallWithTokenEvent: AxelarEvent<
+export const AxelarCosmosContractCallWithTokenEvent: AxelarListenerEvent<
   IBCEvent<ContractCallWithTokenSubmitted>
 > = {
   type: 'axelar.axelarnet.v1beta1.ContractCallWithTokenSubmitted',
@@ -39,7 +39,7 @@ export const AxelarCosmosContractCallWithTokenEvent: AxelarEvent<
   parseEvent: parser.parseContractCallWithTokenSubmittedEvent,
 };
 
-export const AxelarIBCCompleteEvent: AxelarEvent<IBCPacketEvent> = {
+export const AxelarIBCCompleteEvent: AxelarListenerEvent<IBCPacketEvent> = {
   type: 'ExecuteMessage',
   topicId: `tm.event='Tx' AND message.action='ExecuteMessage'`,
   parseEvent: parser.parseIBCCompleteEvent,
