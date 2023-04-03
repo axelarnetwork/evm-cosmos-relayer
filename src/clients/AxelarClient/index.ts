@@ -1,41 +1,36 @@
-import { CosmosNetworkConfig } from '../config/types';
 import { StdFee } from '@cosmjs/stargate';
+import ReconnectingWebSocket from 'reconnecting-websocket';
+import { CosmosNetworkConfig } from 'config/types';
 import {
   getConfirmGatewayTxPayload,
   getExecuteMessageRequest,
   getSignCommandPayload,
-} from '../utils/payloadBuilder';
-import { sleep } from '../utils/utils';
+} from 'utils/payloadBuilder';
+import { sleep } from 'clients/sleep';
 import { sha256 } from 'ethers/lib/utils';
-import ReconnectingWebSocket from 'reconnecting-websocket';
-import { DatabaseClient, SigningClient } from '.';
-import { logger } from '../logger';
+import { DatabaseClient } from 'clients';
+import { logger } from 'logger';
+import { SignerClient } from './AxelarSignerClient';
 
 export class AxelarClient {
-  public signingClient: SigningClient;
+  public signingClient: SignerClient;
   public ws: ReconnectingWebSocket | undefined;
   public chainId: string;
 
-  constructor(_signingClient: SigningClient, _db: DatabaseClient, id: string) {
+  constructor(_signingClient: SignerClient, _db: DatabaseClient, id: string) {
     this.signingClient = _signingClient;
     this.chainId = id;
   }
 
   static async init(db: DatabaseClient, _config: CosmosNetworkConfig) {
-    const signingClient = await SigningClient.init(_config);
+    const signingClient = await SignerClient.init(_config);
     return new AxelarClient(signingClient, db, _config.chainId);
   }
 
   public confirmEvmTx(chain: string, txHash: string) {
-    const payload = getConfirmGatewayTxPayload(
-      this.signingClient.getAddress(),
-      chain,
-      txHash
-    );
+    const payload = getConfirmGatewayTxPayload(this.signingClient.getAddress(), chain, txHash);
     return this.signingClient.broadcast(payload).catch((e: any) => {
-      logger.error(
-        `[AxelarClient.confirmEvmTx] Failed to broadcast ${e.message}`
-      );
+      logger.error(`[AxelarClient.confirmEvmTx] Failed to broadcast ${e.message}`);
     });
   }
 
@@ -48,15 +43,10 @@ export class AxelarClient {
   }
 
   public signCommands(chain: string) {
-    const payload = getSignCommandPayload(
-      this.signingClient.getAddress(),
-      chain
-    );
+    const payload = getSignCommandPayload(this.signingClient.getAddress(), chain);
 
     return this.signingClient.broadcast(payload).catch((e: any) => {
-      logger.error(
-        `[AxelarClient.signCommands] Failed to broadcast signCommands ${e.message}`
-      );
+      logger.error(`[AxelarClient.signCommands] Failed to broadcast signCommands ${e.message}`);
     });
   }
 
@@ -78,11 +68,7 @@ export class AxelarClient {
     return `0x${response.executeData}`;
   }
 
-  public async executeMessageRequest(
-    logIndex: number,
-    txHash: string,
-    payload: string
-  ) {
+  public async executeMessageRequest(logIndex: number, txHash: string, payload: string) {
     const _payload = getExecuteMessageRequest(
       this.signingClient.getAddress(),
       txHash,
@@ -95,9 +81,7 @@ export class AxelarClient {
           `[AxelarClient.executeMessageRequest] Already executed ${txHash} - ${logIndex}`
         );
       }
-      logger.error(
-        `[AxelarClient.executeMessageRequest] Failed to broadcast ${e.message}`
-      );
+      logger.error(`[AxelarClient.executeMessageRequest] Failed to broadcast ${e.message}`);
     });
   }
 
@@ -105,11 +89,7 @@ export class AxelarClient {
     this.signingClient.fee = fee;
   }
 
-  public async calculateTokenIBCPath(
-    destChannelId: string,
-    denom: string,
-    port = 'transfer'
-  ) {
+  public async calculateTokenIBCPath(destChannelId: string, denom: string, port = 'transfer') {
     return sha256(Buffer.from(`${port}/${destChannelId}/${denom}`, 'hex'));
   }
 

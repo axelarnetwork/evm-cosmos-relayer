@@ -1,5 +1,5 @@
-import { CosmosNetworkConfig } from '../config/types';
-import { axelarChain, env } from '../config';
+import { CosmosNetworkConfig } from '../../config/types';
+import { axelarChain, env } from '../../config';
 import { AxelarSigningClient, Environment } from '@axelar-network/axelarjs-sdk';
 import { EncodeObject } from '@cosmjs/proto-signing';
 import { StdFee } from '@cosmjs/stargate';
@@ -9,11 +9,11 @@ import {
   AxelarQueryClient,
   AxelarQueryClientType,
 } from '@axelar-network/axelarjs-sdk/dist/src/libs/AxelarQueryClient';
-import { sleep } from '../utils/utils';
+import { sleep } from '../sleep';
 import { Registry } from '@cosmjs/proto-signing';
-import { logger } from '../logger';
+import { logger } from '../../logger';
 
-export class SigningClient {
+export class SignerClient {
   public config: CosmosNetworkConfig;
   public sdk: AxelarSigningClient;
   public queryClient: AxelarQueryClientType;
@@ -60,7 +60,7 @@ export class SigningClient {
       },
     });
 
-    return new SigningClient(sdk, _queryClient, config);
+    return new SignerClient(sdk, _queryClient, config);
   }
 
   public getAddress() {
