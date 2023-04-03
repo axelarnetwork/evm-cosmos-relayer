@@ -2,7 +2,7 @@ import { CosmosNetworkConfig } from '../config/types';
 import { StdFee } from '@cosmjs/stargate';
 import {
   getConfirmGatewayTxPayload,
-  getExecuteMessageRequest,
+  getRouteMessageRequest,
   getSignCommandPayload,
 } from '../utils/payloadBuilder';
 import { sleep } from '../utils/utils';
@@ -106,7 +106,7 @@ export class AxelarClient {
     txHash: string,
     payload: string
   ) {
-    const _payload = getExecuteMessageRequest(
+    const _payload = getRouteMessageRequest(
       this.signingClient.getAddress(),
       txHash,
       logIndex,
