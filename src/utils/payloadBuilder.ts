@@ -7,7 +7,6 @@ import {
   MsgTransfer,
   protobufPackage,
 } from '@axelar-network/axelarjs-types/ibc/applications/transfer/v1/tx';
-// import {} from "@axelar-network/axelarjs-types/axelar/evm/v1beta1/event";
 import { Height } from 'cosmjs-types/ibc/core/client/v1/client';
 import {
   ExecuteMessageRequest,
@@ -27,11 +26,7 @@ import Long from 'long';
  * @param txHash - source tx hash
  * @returns
  */
-export function getConfirmGatewayTxPayload(
-  sender: string,
-  chain: string,
-  txHash: string
-) {
+export function getConfirmGatewayTxPayload(sender: string, chain: string, txHash: string) {
   return [
     {
       typeUrl: `/${EvmProtobufPackage}.ConfirmGatewayTxRequest`,
@@ -88,8 +83,7 @@ export function getMsgIBCTransfer(
   };
   const sendToken: Coin = {
     amount,
-    denom:
-      'ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5',
+    denom: 'ibc/52E89E856228AD91E1ADE256E9EDEA4F2E147A426E14F71BE7737EB43CA2FCC5',
   };
 
   return [

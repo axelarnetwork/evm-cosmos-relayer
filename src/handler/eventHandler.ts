@@ -15,10 +15,16 @@ import {
   ContractCallApprovedEventObject,
   ContractCallEventObject,
 } from '../types/contracts/IAxelarGateway';
-import {
-  getBatchCommandIdFromSignTx,
-  getPacketSequenceFromExecuteTx,
-} from '../utils/parseUtils';
+
+const getBatchCommandIdFromSignTx = (signTx: any) => {
+  const rawLog = JSON.parse(signTx.rawLog || '{}');
+  const events = rawLog[0].events;
+  const signEvent = events.find((event: { type: string }) => event.type === 'sign');
+  const batchedCommandId = signEvent.attributes.find(
+    (attr: { key: string }) => attr.key === 'batchedCommandID'
+  ).value;
+  return batchedCommandId;
+};
 
 export async function handleEvmToCosmosConfirmEvent(
   vxClient: AxelarClient,
@@ -27,11 +33,7 @@ export async function handleEvmToCosmosConfirmEvent(
   const { id, payload } = executeParams;
   const [hash, logIndex] = id.split('-');
 
-  const executeTx = await vxClient.executeMessageRequest(
-    parseInt(logIndex),
-    hash,
-    payload
-  );
+  const executeTx = await vxClient.executeMessageRequest(parseInt(logIndex), hash, payload);
 
   if (!executeTx) {
     return {
@@ -39,9 +41,7 @@ export async function handleEvmToCosmosConfirmEvent(
     };
   }
 
-  logger.info(
-    `[handleEvmToCosmosEvent] Executed: ${executeTx.transactionHash}`
-  );
+  logger.info(`[handleEvmToCosmosEvent] Executed: ${executeTx.transactionHash}`);
   const packetSequence = getPacketSequenceFromExecuteTx(executeTx);
 
   return {
@@ -55,9 +55,7 @@ export async function handleEvmToCosmosEvent(
   event: EvmEvent<ContractCallWithTokenEventObject | ContractCallEventObject>
 ) {
   const confirmTx = await vxClient.confirmEvmTx(event.sourceChain, event.hash);
-  logger.info(
-    `[handleEvmToCosmosEvent] Confirmed: ${confirmTx.transactionHash}`
-  );
+  logger.info(`[handleEvmToCosmosEvent] Confirmed: ${confirmTx.transactionHash}`);
 }
 
 export async function handleCosmosToEvmEvent<
@@ -65,8 +63,7 @@ export async function handleCosmosToEvmEvent<
 >(vxClient: AxelarClient, evmClients: EvmClient[], event: IBCEvent<T>) {
   // Find the evm client associated with event's destination chain
   const evmClient = evmClients.find(
-    (client) =>
-      client.chainId.toLowerCase() === event.args.destinationChain.toLowerCase()
+    (client) => client.chainId.toLowerCase() === event.args.destinationChain.toLowerCase()
   );
 
   // If no evm client found, return
@@ -80,26 +77,16 @@ export async function handleCosmosToEvmEvent<
       event.args.payload
     );
 
-    logger.info(
-      `[handleCosmosToEvmEvent] Executed: ${executeMessage.transactionHash}`
-    );
+    logger.info(`[handleCosmosToEvmEvent] Executed: ${executeMessage.transactionHash}`);
   }
 
-  const pendingCommands = await vxClient.getPendingCommands(
-    event.args.destinationChain
-  );
+  const pendingCommands = await vxClient.getPendingCommands(event.args.destinationChain);
 
-  logger.info(
-    `[handleCosmosToEvmEvent] PendingCommands: ${JSON.stringify(
-      pendingCommands
-    )}`
-  );
+  logger.info(`[handleCosmosToEvmEvent] PendingCommands: ${JSON.stringify(pendingCommands)}`);
   if (pendingCommands.length === 0) return;
 
   const signCommand = await vxClient.signCommands(event.args.destinationChain);
-  logger.debug(
-    `[handleCosmosToEvmEvent] SignCommand: ${JSON.stringify(signCommand)}`
-  );
+  logger.debug(`[handleCosmosToEvmEvent] SignCommand: ${JSON.stringify(signCommand)}`);
 
   if (signCommand.rawLog.includes('failed')) {
     throw new Error(signCommand.rawLog);
@@ -113,9 +100,7 @@ export async function handleCosmosToEvmEvent<
     batchedCommandId
   );
 
-  logger.info(
-    `[handleCosmosToEvmEvent] BatchCommands: ${JSON.stringify(executeData)}`
-  );
+  logger.info(`[handleCosmosToEvmEvent] BatchCommands: ${JSON.stringify(executeData)}`);
 
   const tx = await evmClient.gatewayExecute(executeData);
   if (!tx) return;
@@ -129,13 +114,7 @@ export async function handleCosmosToEvmCallContractCompleteEvent(
   event: EvmEvent<ContractCallApprovedEventObject>,
   relayDatas: { id: string; payload: string | undefined }[]
 ) {
-  const {
-    commandId,
-    contractAddress,
-    sourceAddress,
-    sourceChain,
-    payloadHash,
-  } = event.args;
+  const { commandId, contractAddress, sourceAddress, sourceChain, payloadHash } = event.args;
 
   if (!relayDatas) {
     logger.info(
@@ -187,11 +166,7 @@ export async function handleCosmosToEvmCallContractCompleteEvent(
       continue;
     }
 
-    logger.info(
-      `[handleCosmosToEvmCallContractCompleteEvent] execute: ${JSON.stringify(
-        tx
-      )}`
-    );
+    logger.info(`[handleCosmosToEvmCallContractCompleteEvent] execute: ${JSON.stringify(tx)}`);
 
     result.push({
       id,
@@ -207,15 +182,8 @@ export async function handleCosmosToEvmCallContractWithTokenCompleteEvent(
   event: EvmEvent<ContractCallApprovedWithMintEventObject>,
   relayDatas: { id: string; payload: string | undefined }[]
 ) {
-  const {
-    amount,
-    commandId,
-    contractAddress,
-    sourceAddress,
-    sourceChain,
-    symbol,
-    payloadHash,
-  } = event.args;
+  const { amount, commandId, contractAddress, sourceAddress, sourceChain, symbol, payloadHash } =
+    event.args;
 
   if (!relayDatas) {
     logger.info(
@@ -289,21 +257,24 @@ export async function handleCosmosToEvmCallContractWithTokenCompleteEvent(
   return result;
 }
 
-export async function handleEvmToCosmosCompleteEvent(
-  client: AxelarClient,
-  event: IBCPacketEvent
-) {
+export async function handleEvmToCosmosCompleteEvent(client: AxelarClient, event: IBCPacketEvent) {
   logger.info(`[handleEvmToCosmosCompleteEvent] Memo: ${event.memo}`);
 }
 
-export async function prepareHandler(
-  event: any,
-  db: DatabaseClient,
-  label = ''
-) {
+export async function prepareHandler(event: any, db: DatabaseClient, label = '') {
   // reconnect prisma db
   await db.connect();
 
   // log event
   logger.info(`[${label}] EventReceived ${JSON.stringify(event)}`);
 }
+
+const getPacketSequenceFromExecuteTx = (executeTx: any) => {
+  const rawLog = JSON.parse(executeTx.rawLog || '{}');
+  const events = rawLog[0].events;
+  const sendPacketEvent = events.find((event: { type: string }) => event.type === 'send_packet');
+  const seq = sendPacketEvent.attributes.find(
+    (attr: { key: string }) => attr.key === 'packet_sequence'
+  ).value;
+  return parseInt(seq);
+};
