@@ -167,18 +167,15 @@ async function relayTxToEvmGateway<
   // If no evm client found, return
   if (!evmClient) return;
 
-  // TODO: Remove this when it's live on testnet
-  if (env.CHAIN_ENV === 'devnet') {
-    const executeMessage = await vxClient.executeMessageRequest(
-      -1,
-      event.args.messageId,
-      event.args.payload
-    );
+  const executeMessage = await vxClient.executeMessageRequest(
+    -1,
+    event.args.messageId,
+    event.args.payload
+  );
 
-    logger.info(
-      `[handleCosmosToEvmEvent] Executed: ${executeMessage.transactionHash}`
-    );
-  }
+  logger.info(
+    `[handleCosmosToEvmEvent] Executed: ${executeMessage.transactionHash}`
+  );
 
   const pendingCommands = await vxClient.getPendingCommands(
     event.args.destinationChain
