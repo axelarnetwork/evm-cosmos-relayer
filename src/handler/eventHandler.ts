@@ -41,13 +41,21 @@ export async function handleEvmToCosmosConfirmEvent(
     };
   }
 
-  logger.info(`[handleEvmToCosmosEvent] Executed: ${executeTx.transactionHash}`);
-  const packetSequence = getPacketSequenceFromExecuteTx(executeTx);
+  const isAlreadyExecuted = executeTx.rawLog?.includes('already executed');
 
-  return {
-    status: Status.SUCCESS,
-    packetSequence,
-  };
+  if (isAlreadyExecuted) {
+    logger.info(`[handleEvmToCosmosConfirmEvent] Already sent an executed tx for ${id}. Marked it as success.`);
+    return {
+      status: Status.SUCCESS,
+    };
+  } else {
+    logger.info(`[handleEvmToCosmosConfirmEvent] Executed: ${executeTx.transactionHash}`);
+    const packetSequence = getPacketSequenceFromExecuteTx(executeTx);
+    return {
+      status: Status.SUCCESS,
+      packetSequence,
+    };
+  }
 }
 
 export async function handleEvmToCosmosEvent(
@@ -55,7 +63,9 @@ export async function handleEvmToCosmosEvent(
   event: EvmEvent<ContractCallWithTokenEventObject | ContractCallEventObject>
 ) {
   const confirmTx = await vxClient.confirmEvmTx(event.sourceChain, event.hash);
-  logger.info(`[handleEvmToCosmosEvent] Confirmed: ${confirmTx.transactionHash}`);
+  if (confirmTx) {
+    logger.info(`[handleEvmToCosmosEvent] Confirmed: ${confirmTx.transactionHash}`);
+  }
 }
 
 export async function handleCosmosToEvmEvent<
@@ -77,7 +87,9 @@ export async function handleCosmosToEvmEvent<
       event.args.payload
     );
 
-    logger.info(`[handleCosmosToEvmEvent] Executed: ${executeMessage.transactionHash}`);
+    if (executeMessage) {
+      logger.info(`[handleCosmosToEvmEvent] Executed: ${executeMessage.transactionHash}`);
+    }
   }
 
   const pendingCommands = await vxClient.getPendingCommands(event.args.destinationChain);
@@ -88,7 +100,7 @@ export async function handleCosmosToEvmEvent<
   const signCommand = await vxClient.signCommands(event.args.destinationChain);
   logger.debug(`[handleCosmosToEvmEvent] SignCommand: ${JSON.stringify(signCommand)}`);
 
-  if (signCommand.rawLog.includes('failed')) {
+  if (signCommand && signCommand.rawLog?.includes('failed')) {
     throw new Error(signCommand.rawLog);
   }
 
@@ -270,6 +282,7 @@ export async function prepareHandler(event: any, db: DatabaseClient, label = '')
 }
 
 const getPacketSequenceFromExecuteTx = (executeTx: any) => {
+  console.log(JSON.stringify(executeTx));
   const rawLog = JSON.parse(executeTx.rawLog || '{}');
   const events = rawLog[0].events;
   const sendPacketEvent = events.find((event: { type: string }) => event.type === 'send_packet');
