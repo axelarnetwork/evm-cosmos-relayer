@@ -36,9 +36,7 @@ export class AxelarListener {
   public listen<T>(event: AxelarListenerEvent<T>, subject: Subject<T>) {
     const ws = this.getWs(event.topicId);
     ws.reconnect();
-    logger.info(
-      `[AxelarListener] Listening to "${event.type}" event`
-    );
+    logger.info(`[AxelarListener] Listening to "${event.type}" event`);
     ws.send(
       JSON.stringify({
         jsonrpc: '2.0',
@@ -54,18 +52,17 @@ export class AxelarListener {
       // check if the event topic is matched
       if (!_event.result || _event.result.query !== event.topicId) return;
 
-      logger.debug(`[AxelarListener] Received ${ev.type} event.`);
+      logger.debug(`[AxelarListener] Received ${event.type} event`);
 
       // parse the event data
-      try {
-        event.parseEvent(_event.result.events).then((ev) => {
+      event
+        .parseEvent(_event.result.events)
+        .then((ev) => {
           subject.next(ev);
+        })
+        .catch((e) => {
+          logger.error(`[AxelarListener] Failed to parse topic ${event.topicId} GMP event: ${e}`);
         });
-      } catch (e) {
-        logger.error(
-          `[AxelarListener] Failed to parse topic ${event.topicId} GMP event: ${e}`
-        );
-      }
     });
   }
 }
