@@ -17,8 +17,8 @@ export const parseAnyEvent = async (
     hash: event.transactionHash,
     blockNumber: event.blockNumber,
     logIndex: eventIndex,
-    sourceChain: event.args.sourceChain,
-    destinationChain: currentChainName,
+    sourceChain: event.args.sourceChain || currentChainName,
+    destinationChain: event.args.destinationChain || currentChainName,
     waitForFinality: () => {
       return provider.waitForTransaction(event.transactionHash, finalityBlocks);
     },
