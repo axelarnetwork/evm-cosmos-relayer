@@ -5,6 +5,7 @@ import { EvmListenerEvent } from './eventTypes';
 import { TypedEvent } from '../../types/contracts/common';
 import { EvmEvent } from '../../types';
 import { Subject } from 'rxjs';
+import { logger } from '../../logger';
 
 export class EvmListener {
   private gatewayContract: IAxelarGateway;
@@ -27,6 +28,9 @@ export class EvmListener {
     event: EvmListenerEvent<EventObject, Event>,
     subject: Subject<EvmEvent<EventObject>>
   ) {
+    logger.info(
+      `[EVMListener] [${this.chainId}] Subscribed to "${event.name}" event`
+    );
     const filter = event.getEventFilter(this.gatewayContract);
     this.gatewayContract.on(filter, async (...args) => {
       const ev: Event = args[args.length - 1];
