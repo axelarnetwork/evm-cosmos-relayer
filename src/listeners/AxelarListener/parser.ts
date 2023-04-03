@@ -83,18 +83,18 @@ export class Parser {
   }
 
   parseIBCCompleteEvent(event: any): Promise<IBCPacketEvent> {
-    const packetData = event.result.events['send_packet.packet_data']?.[0];
+    const packetData = event['send_packet.packet_data']?.[0];
     if (!packetData) return Promise.reject('packet_data not found');
     const memo = JSON.parse(packetData).memo;
 
     // parse the event data
     const data = {
-      sequence: parseInt(event.result.events['send_packet.packet_sequence'][0]),
+      sequence: parseInt(event['send_packet.packet_sequence'][0]),
       amount: packetData.amount,
       denom: packetData.denom,
-      destChannel: event.result.events['send_packet.packet_dst_channel'][0],
-      srcChannel: event.result.events['send_packet.packet_src_channel'][0],
-      hash: event.result.events['tx.hash'][0],
+      destChannel: event['send_packet.packet_dst_channel'][0],
+      srcChannel: event['send_packet.packet_src_channel'][0],
+      hash: event['tx.hash'][0],
       memo,
     };
 
