@@ -33,11 +33,7 @@ export async function handleEvmToCosmosConfirmEvent(
   const { id, payload } = executeParams;
   const [hash, logIndex] = id.split('-');
 
-  const routeMessageTx = await vxClient.routeMessageRequest(
-    parseInt(logIndex),
-    hash,
-    payload
-  );
+  const routeMessageTx = await vxClient.routeMessageRequest(parseInt(logIndex), hash, payload);
 
   if (!routeMessageTx) {
     return {
@@ -48,7 +44,9 @@ export async function handleEvmToCosmosConfirmEvent(
   const isAlreadyExecuted = routeMessageTx.rawLog?.includes('already executed');
 
   if (isAlreadyExecuted) {
-    logger.info(`[handleEvmToCosmosConfirmEvent] Already sent an executed tx for ${id}. Marked it as success.`);
+    logger.info(
+      `[handleEvmToCosmosConfirmEvent] Already sent an executed tx for ${id}. Marked it as success.`
+    );
     return {
       status: Status.SUCCESS,
     };
@@ -90,7 +88,7 @@ export async function handleCosmosToEvmEvent<
   );
 
   if (routeMessage) {
-      logger.info(`[handleCosmosToEvmEvent] RouteMessage: ${routeMessage.transactionHash}`);
+    logger.info(`[handleCosmosToEvmEvent] RouteMessage: ${routeMessage.transactionHash}`);
   }
 
   const pendingCommands = await vxClient.getPendingCommands(event.args.destinationChain);
@@ -129,7 +127,7 @@ export async function handleCosmosToEvmCallContractCompleteEvent(
 ) {
   const { commandId, contractAddress, sourceAddress, sourceChain, payloadHash } = event.args;
 
-  if (!relayDatas) {
+  if (!relayDatas || relayDatas.length === 0) {
     logger.info(
       `[handleCosmosToEvmCallContractCompleteEvent]: Cannot find payload from given payloadHash: ${payloadHash}`
     );
@@ -155,7 +153,7 @@ export async function handleCosmosToEvmCallContractCompleteEvent(
         status: Status.SUCCESS,
       });
       logger.info(
-        `[handleCosmosToEvmCallContractCompleteEvent] Already executed commandId: ${commandId}. Will mark the status in the DB as Success.`
+        `[handleCosmosToEvmCallContractCompleteEvent] Already executed txId ${data.id} with commandId ${commandId} for . Will mark the status in the DB as Success.`
       );
       continue;
     }
@@ -198,7 +196,7 @@ export async function handleCosmosToEvmCallContractWithTokenCompleteEvent(
   const { amount, commandId, contractAddress, sourceAddress, sourceChain, symbol, payloadHash } =
     event.args;
 
-  if (!relayDatas) {
+  if (!relayDatas || relayDatas.length === 0) {
     logger.info(
       `[handleCosmosToEvmCallContractWithTokenCompleteEvent]: Cannot find payload from given payloadHash: ${payloadHash}`
     );

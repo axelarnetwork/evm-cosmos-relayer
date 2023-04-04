@@ -26,38 +26,36 @@ export class DatabaseClient {
     return this.prisma.relayData.create({
       data: {
         id: `${event.args.messageId}`,
-        from: event.args.sourceChain,
-        to: event.args.destinationChain,
+        from: event.args.sourceChain.toLowerCase(),
+        to: event.args.destinationChain.toLowerCase(),
         status: Status.PENDING,
         callContract: {
           create: {
-            payload: event.args.payload,
-            payloadHash: event.args.payloadHash,
-            contractAddress: event.args.contractAddress,
-            sourceAddress: event.args.sender,
+            payload: event.args.payload.toLowerCase(),
+            payloadHash: event.args.payloadHash.toLowerCase(),
+            contractAddress: event.args.contractAddress.toLowerCase(),
+            sourceAddress: event.args.sender.toLowerCase(),
           },
         },
       },
     });
   }
 
-  createCosmosContractCallWithTokenEvent(
-    event: IBCEvent<ContractCallWithTokenSubmitted>
-  ) {
+  createCosmosContractCallWithTokenEvent(event: IBCEvent<ContractCallWithTokenSubmitted>) {
     return this.prisma.relayData.create({
       data: {
         id: `${event.args.messageId}`,
-        from: event.args.sourceChain,
-        to: event.args.destinationChain,
+        from: event.args.sourceChain.toLowerCase(),
+        to: event.args.destinationChain.toLowerCase(),
         status: Status.PENDING,
         callContractWithToken: {
           create: {
-            payload: event.args.payload,
-            payloadHash: event.args.payloadHash,
-            contractAddress: event.args.contractAddress,
-            sourceAddress: event.args.sender,
+            payload: event.args.payload.toLowerCase(),
+            payloadHash: event.args.payloadHash.toLowerCase(),
+            contractAddress: event.args.contractAddress.toLowerCase(),
+            sourceAddress: event.args.sender.toLowerCase(),
             amount: event.args.amount.toString(),
-            symbol: event.args.symbol,
+            symbol: event.args.symbol.toLowerCase(),
           },
         },
       },
@@ -73,19 +71,17 @@ export class DatabaseClient {
         to: event.destinationChain,
         callContract: {
           create: {
-            payload: event.args.payload,
-            payloadHash: event.args.payloadHash,
-            contractAddress: event.args.destinationContractAddress,
-            sourceAddress: event.args.sender,
+            payload: event.args.payload.toLowerCase(),
+            payloadHash: event.args.payloadHash.toLowerCase(),
+            contractAddress: event.args.destinationContractAddress.toLowerCase(),
+            sourceAddress: event.args.sender.toLowerCase(),
           },
         },
       },
     });
   }
 
-  createEvmCallContractWithTokenEvent(
-    event: EvmEvent<ContractCallWithTokenEventObject>
-  ) {
+  createEvmCallContractWithTokenEvent(event: EvmEvent<ContractCallWithTokenEventObject>) {
     const id = `${event.hash}-${event.logIndex}`;
     return this.prisma.relayData.create({
       data: {
@@ -94,12 +90,12 @@ export class DatabaseClient {
         to: event.destinationChain,
         callContractWithToken: {
           create: {
-            payload: event.args.payload,
-            payloadHash: event.args.payloadHash,
-            contractAddress: event.args.destinationContractAddress,
-            sourceAddress: event.args.sender,
+            payload: event.args.payload.toLowerCase(),
+            payloadHash: event.args.payloadHash.toLowerCase(),
+            contractAddress: event.args.destinationContractAddress.toLowerCase(),
+            sourceAddress: event.args.sender.toLowerCase(),
             amount: event.args.amount.toString(),
-            symbol: event.args.symbol,
+            symbol: event.args.symbol.toLowerCase(),
           },
         },
       },
@@ -117,7 +113,7 @@ export class DatabaseClient {
         id: event.args.messageId,
       },
       data: {
-        executeHash: tx.transactionHash,
+        executeHash: tx.transactionHash.toLowerCase(),
         status: Status.APPROVED,
       },
     });
@@ -142,9 +138,7 @@ export class DatabaseClient {
     });
   }
 
-  async findCosmosToEvmCallContractApproved(
-    event: EvmEvent<ContractCallApprovedEventObject>
-  ) {
+  async findCosmosToEvmCallContractApproved(event: EvmEvent<ContractCallApprovedEventObject>) {
     const { contractAddress, sourceAddress, payloadHash } = event.args;
 
     const datas = await this.prisma.relayData.findMany({
@@ -152,17 +146,17 @@ export class DatabaseClient {
         OR: [
           {
             callContract: {
-              payloadHash,
-              sourceAddress,
-              contractAddress,
+              payloadHash: payloadHash.toLowerCase(),
+              sourceAddress: sourceAddress.toLowerCase(),
+              contractAddress: contractAddress.toLowerCase(),
             },
             status: Status.PENDING,
           },
           {
             callContract: {
-              payloadHash,
-              sourceAddress,
-              contractAddress,
+              payloadHash: payloadHash.toLowerCase(),
+              sourceAddress: sourceAddress.toLowerCase(),
+              contractAddress: contractAddress.toLowerCase(),
             },
             status: Status.APPROVED,
           },
@@ -197,18 +191,18 @@ export class DatabaseClient {
         OR: [
           {
             callContractWithToken: {
-              payloadHash: payloadHash,
-              sourceAddress: sourceAddress,
-              contractAddress: contractAddress,
+              payloadHash: payloadHash.toLowerCase(),
+              sourceAddress: sourceAddress.toLowerCase(),
+              contractAddress: contractAddress.toLowerCase(),
               amount: amount.toString(),
             },
             status: Status.PENDING,
           },
           {
             callContractWithToken: {
-              payloadHash: payloadHash,
-              sourceAddress: sourceAddress,
-              contractAddress: contractAddress,
+              payloadHash: payloadHash.toLowerCase(),
+              sourceAddress: sourceAddress.toLowerCase(),
+              contractAddress: contractAddress.toLowerCase(),
               amount: amount.toString(),
             },
             status: Status.PENDING,
@@ -247,11 +241,7 @@ export class DatabaseClient {
     logger.info(`[DBUpdate] ${JSON.stringify(executeDb)}`);
   }
 
-  async updateEventStatusWithPacketSequence(
-    id: string,
-    status: Status,
-    sequence?: number
-  ) {
+  async updateEventStatusWithPacketSequence(id: string, status: Status, sequence?: number) {
     const executeDb = await this.prisma.relayData.update({
       where: {
         id,
