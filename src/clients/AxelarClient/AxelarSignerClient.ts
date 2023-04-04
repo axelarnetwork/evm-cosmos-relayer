@@ -39,10 +39,7 @@ export class SignerClient {
     this.maxRetries = _maxRetries;
     this.retryDelay = _retryDelay;
     this.fee = 'auto';
-    sdk.registry.register(
-      `/${AxelarProtobufPackage}.RouteMessageRequest`,
-      ExecuteMessageRequest
-    );
+    sdk.registry.register(`/${AxelarProtobufPackage}.RouteMessageRequest`, ExecuteMessageRequest);
     // this.fee = {
     //   gas: '20000000', // 20M
     //   amount: [{ denom: config.denom, amount: config.gasPrice }],
@@ -51,14 +48,15 @@ export class SignerClient {
 
   static async init(_config?: CosmosNetworkConfig) {
     const config = _config || axelarChain;
+    const environment = env.CHAIN_ENV === 'testnet' ? Environment.TESTNET : Environment.DEVNET
     const _queryClient = await AxelarQueryClient.initOrGetAxelarQueryClient({
-      environment: Environment.DEVNET,
+      environment,
       axelarRpcUrl: config.rpcUrl,
     });
     const registry = new Registry();
     registry.register('/ibc.applications.transfer.v1.MsgTransfer', MsgTransfer);
     const sdk = await AxelarSigningClient.initOrGetAxelarSigningClient({
-      environment: Environment.DEVNET,
+      environment,
       axelarRpcUrl: config.rpcUrl,
       cosmosBasedWalletDetails: {
         mnemonic: config.mnemonic,
@@ -96,6 +94,4 @@ export class SignerClient {
       throw e;
     });
   }
-
-
 }
