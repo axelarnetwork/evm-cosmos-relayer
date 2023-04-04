@@ -12,6 +12,10 @@ import {
 import { sleep } from '../utils/utils';
 import { Registry } from '@cosmjs/proto-signing';
 import { logger } from '../logger';
+import {
+  ExecuteMessageRequest,
+  protobufPackage as AxelarProtobufPackage,
+} from '@axelar-network/axelarjs-types/axelar/axelarnet/v1beta1/tx';
 
 export class SigningClient {
   public config: CosmosNetworkConfig;
@@ -34,6 +38,10 @@ export class SigningClient {
     this.maxRetries = _maxRetries;
     this.retryDelay = _retryDelay;
     this.fee = 'auto';
+    sdk.registry.register(
+      `/${AxelarProtobufPackage}.RouteMessageRequest`,
+      ExecuteMessageRequest
+    );
     // this.fee = {
     //   gas: '20000000', // 20M
     //   amount: [{ denom: config.denom, amount: config.gasPrice }],
