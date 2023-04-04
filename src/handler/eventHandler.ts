@@ -27,7 +27,7 @@ export async function handleEvmToCosmosConfirmEvent(
   const { id, payload } = executeParams;
   const [hash, logIndex] = id.split('-');
 
-  const executeTx = await vxClient.executeMessageRequest(
+  const executeTx = await vxClient.routeMessageRequest(
     parseInt(logIndex),
     hash,
     payload
@@ -167,14 +167,14 @@ async function relayTxToEvmGateway<
   // If no evm client found, return
   if (!evmClient) return;
 
-  const executeMessage = await vxClient.executeMessageRequest(
+  const routeMessage = await vxClient.routeMessageRequest(
     -1,
     event.args.messageId,
     event.args.payload
   );
 
   logger.info(
-    `[handleCosmosToEvmEvent] Executed: ${executeMessage.transactionHash}`
+    `[handleCosmosToEvmEvent] RouteMessage: ${routeMessage.transactionHash}`
   );
 
   const pendingCommands = await vxClient.getPendingCommands(

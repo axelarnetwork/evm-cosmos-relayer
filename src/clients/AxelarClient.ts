@@ -101,7 +101,7 @@ export class AxelarClient {
     return `0x${response.executeData}`;
   }
 
-  public async executeMessageRequest(
+  public async routeMessageRequest(
     logIndex: number,
     txHash: string,
     payload: string
