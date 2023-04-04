@@ -33,19 +33,19 @@ export async function handleEvmToCosmosConfirmEvent(
   const { id, payload } = executeParams;
   const [hash, logIndex] = id.split('-');
 
-  const executeTx = await vxClient.routeMessageRequest(
+  const routeMessageTx = await vxClient.routeMessageRequest(
     parseInt(logIndex),
     hash,
     payload
   );
 
-  if (!executeTx) {
+  if (!routeMessageTx) {
     return {
       status: Status.FAILED,
     };
   }
 
-  const isAlreadyExecuted = executeTx.rawLog?.includes('already executed');
+  const isAlreadyExecuted = routeMessageTx.rawLog?.includes('already executed');
 
   if (isAlreadyExecuted) {
     logger.info(`[handleEvmToCosmosConfirmEvent] Already sent an executed tx for ${id}. Marked it as success.`);
@@ -53,8 +53,8 @@ export async function handleEvmToCosmosConfirmEvent(
       status: Status.SUCCESS,
     };
   } else {
-    logger.info(`[handleEvmToCosmosConfirmEvent] Executed: ${executeTx.transactionHash}`);
-    const packetSequence = getPacketSequenceFromExecuteTx(executeTx);
+    logger.info(`[handleEvmToCosmosConfirmEvent] Executed: ${routeMessageTx.transactionHash}`);
+    const packetSequence = getPacketSequenceFromExecuteTx(routeMessageTx);
     return {
       status: Status.SUCCESS,
       packetSequence,

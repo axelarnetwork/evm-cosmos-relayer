@@ -4,7 +4,7 @@ import { CosmosNetworkConfig } from 'config';
 import { DeliverTxResponse, isDeliverTxFailure, isDeliverTxSuccess } from '@cosmjs/stargate';
 import {
   getConfirmGatewayTxPayload,
-  getExecuteMessageRequest,
+  getRouteMessageRequest,
   getSignCommandPayload,
 } from '../../utils/payloadBuilder';
 import { sleep } from '../../clients/sleep';
@@ -69,8 +69,8 @@ export class AxelarClient {
     return `0x${response.executeData}`;
   }
 
-  public async executeMessageRequest(logIndex: number, txHash: string, payload: string) {
-    const _payload = getExecuteMessageRequest(
+  public async routeMessageRequest(logIndex: number, txHash: string, payload: string) {
+    const _payload = getRouteMessageRequest(
       this.signingClient.getAddress(),
       txHash,
       logIndex,
@@ -79,10 +79,10 @@ export class AxelarClient {
     return this.signingClient.broadcast(_payload).catch((e: any) => {
       if (e.message.indexOf('already executed') > -1) {
         logger.error(
-          `[AxelarClient.executeMessageRequest] Already executed ${txHash} - ${logIndex}`
+          `[AxelarClient.routeMessageRequest] Already executed ${txHash} - ${logIndex}`
         );
       }
-      logger.error(`[AxelarClient.executeMessageRequest] Failed to broadcast ${e.message}`);
+      logger.error(`[AxelarClient.routeMessageRequest] Failed to broadcast ${e.message}`);
       return undefined
     });
   }
