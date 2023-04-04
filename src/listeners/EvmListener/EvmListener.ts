@@ -12,15 +12,14 @@ export class EvmListener {
   private currentBlock = 0;
   public chainId: string;
   public finalityBlocks: number;
+  public cosmosChainNames: string[];
 
-  constructor(evm: EvmNetworkConfig) {
+  constructor(evm: EvmNetworkConfig, cosmosChainNames: string[]) {
     const provider = new ethers.providers.JsonRpcProvider(evm.rpcUrl);
-    this.gatewayContract = IAxelarGateway__factory.connect(
-      evm.gateway,
-      provider
-    );
+    this.gatewayContract = IAxelarGateway__factory.connect(evm.gateway, provider);
     this.chainId = evm.id;
     this.finalityBlocks = evm.finality;
+    this.cosmosChainNames = cosmosChainNames;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -28,14 +27,13 @@ export class EvmListener {
     event: EvmListenerEvent<EventObject, Event>,
     subject: Subject<EvmEvent<EventObject>>
   ) {
-    logger.info(
-      `[EVMListener] [${this.chainId}] Listening to "${event.name}" event`
-    );
-    const filter = event.getEventFilter(this.gatewayContract);
-    this.gatewayContract.on(filter, async (...args) => {
+    logger.info(`[EVMListener] [${this.chainId}] Listening to "${event.name}" event`);
+    const eventFilter = event.getEventFilter(this.gatewayContract);
+    this.gatewayContract.on(eventFilter, async (...args) => {
       const ev: Event = args[args.length - 1];
 
       if (ev.blockNumber <= this.currentBlock) return;
+      if (!event.isAcceptedChain(this.cosmosChainNames, ev.args)) return;
 
       const evmEvent = await event.parseEvent(
         this.chainId,
