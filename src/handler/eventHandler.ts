@@ -102,6 +102,9 @@ export async function handleCosmosToEvmEvent<
   if (signCommand && signCommand.rawLog?.includes('failed')) {
     throw new Error(signCommand.rawLog);
   }
+  if (!signCommand) {
+    throw new Error('cannot sign command');
+  }
 
   const batchedCommandId = getBatchCommandIdFromSignTx(signCommand);
   logger.info(`[handleCosmosToEvmEvent] BatchCommandId: ${batchedCommandId}`);
