@@ -49,8 +49,8 @@ export const parseContractCallSubmittedEvent = (
 
   return {
     hash: event['tx.hash'][0],
-    srcChannel: event['write_acknowledgement.packet_src_channel'][0],
-    destChannel: event['write_acknowledgement.packet_dst_channel'][0],
+    srcChannel: event?.['write_acknowledgement.packet_src_channel']?.[0],
+    destChannel: event?.['write_acknowledgement.packet_dst_channel']?.[0],
     args: data,
   };
 };
@@ -76,8 +76,8 @@ export const parseContractCallWithTokenSubmittedEvent = (
 
   return {
     hash: event['tx.hash'][0],
-    srcChannel: event['write_acknowledgement.packet_src_channel'][0],
-    destChannel: event['write_acknowledgement.packet_dst_channel'][0],
+    srcChannel: event?.['write_acknowledgement.packet_src_channel']?.[0],
+    destChannel: event?.['write_acknowledgement.packet_dst_channel']?.[0],
     args: data,
   };
 };

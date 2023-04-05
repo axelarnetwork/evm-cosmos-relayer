@@ -24,8 +24,8 @@ export interface IBCPacketEvent {
 
 export interface IBCEvent<T> {
   hash: string;
-  srcChannel: string;
-  destChannel: string;
+  srcChannel?: string;
+  destChannel?: string;
   args: T;
 }
 
