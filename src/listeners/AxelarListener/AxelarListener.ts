@@ -1,7 +1,6 @@
 import ReconnectingWebSocket from 'reconnecting-websocket';
 import WebSocket from 'isomorphic-ws';
 import { Subject } from 'rxjs';
-import { DatabaseClient } from '../..';
 import { AxelarListenerEvent } from './eventTypes';
 import { logger } from '../../logger';
 
@@ -14,10 +13,8 @@ export class AxelarListener {
   };
 
   private wsUrl: string;
-  private db: DatabaseClient;
 
-  constructor(db: DatabaseClient, wsUrl: string) {
-    this.db = db;
+  constructor(wsUrl: string) {
     this.wsMap = new Map();
     this.wsUrl = wsUrl;
   }
