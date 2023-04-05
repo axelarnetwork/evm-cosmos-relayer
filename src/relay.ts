@@ -56,10 +56,10 @@ const sCosmosApproveAny = new Subject<IBCPacketEvent>();
 // Initialize DB client
 const db = new DatabaseClient();
 
-const cosmosChainNames = cosmosChains.map(chain => chain.chainId)
+const cosmosChainNames = cosmosChains.map((chain) => chain.chainId);
 
 async function main() {
-  const axelarListener = new AxelarListener(db, axelarChain.ws);
+  const axelarListener = new AxelarListener(axelarChain.ws);
   const evmListeners = evmChains.map((evm) => new EvmListener(evm, cosmosChainNames));
   const axelarClient = await AxelarClient.init(db, axelarChain);
   const evmClients = evmChains.map((evm) => new EvmClient(evm));
