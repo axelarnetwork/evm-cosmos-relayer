@@ -1,4 +1,4 @@
-import { AxelarClient, DatabaseClient, EvmClient, env } from '..';
+import { AxelarClient, DatabaseClient, EvmClient } from '..';
 import { logger } from '../logger';
 import {
   ContractCallSubmitted,

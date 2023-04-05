@@ -1,5 +1,4 @@
 import { StdFee } from '@cosmjs/stargate';
-import ReconnectingWebSocket from 'reconnecting-websocket';
 import { CosmosNetworkConfig } from 'config';
 import { DeliverTxResponse, isDeliverTxFailure, isDeliverTxSuccess } from '@cosmjs/stargate';
 import {
