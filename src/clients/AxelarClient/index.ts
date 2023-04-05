@@ -15,7 +15,6 @@ import { SignerClient } from './AxelarSignerClient';
 
 export class AxelarClient {
   public signingClient: SignerClient;
-  public ws: ReconnectingWebSocket | undefined;
   public chainId: string;
 
   constructor(_signingClient: SignerClient, _db: DatabaseClient, id: string) {
