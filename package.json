@@ -6,9 +6,8 @@
   "scripts": {
     "lint": "eslint .",
     "build": "rm -rf dist && tsc",
-    "start:dev": "nodemon --watch 'src/**/*.ts' --exec NODE_ENV=development ts-node src/relay.ts",
-    "start:prod": "NODE_ENV=production node dist/src/relay.js",
-    "start": "node dist/src/relay.js",
+    "start:dev": "nodemon --watch 'src/**/*.ts' --exec NODE_ENV=development ts-node src/start.ts",
+    "start:prod": "NODE_ENV=production node dist/src/start.js",
     "test": "jest",
     "postinstall": "typechain --target ethers-v5 --out-dir src/types/contracts/ src/abi/*.json"
   },
