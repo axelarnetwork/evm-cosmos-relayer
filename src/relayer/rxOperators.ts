@@ -10,14 +10,6 @@ import {
 import { CosmosNetworkConfig } from '../config/types';
 import { EvmClient } from '../clients';
 
-export const filterEventArgs = (event: TypedEvent) => {
-  return Object.entries(event.args).reduce((acc, [key, value]) => {
-    if (!isNaN(Number(key))) return acc;
-    acc[key] = value;
-    return acc;
-  }, {} as any);
-};
-
 export function filterCosmosDestination(cosmosChains: CosmosNetworkConfig[]) {
   return filter(
     (

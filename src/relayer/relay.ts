@@ -1,13 +1,13 @@
 import { Subject, mergeMap } from 'rxjs';
-import { AxelarClient, EvmClient, DatabaseClient } from './clients';
-import { axelarChain, cosmosChains, evmChains } from './config';
+import { AxelarClient, EvmClient, DatabaseClient } from '../clients';
+import { axelarChain, cosmosChains, evmChains } from '../config';
 import {
   ContractCallSubmitted,
   ContractCallWithTokenSubmitted,
   EvmEvent,
   ExecuteRequest,
   IBCPacketEvent,
-} from './types';
+} from '../types';
 import {
   AxelarCosmosContractCallEvent,
   AxelarCosmosContractCallWithTokenEvent,
@@ -19,13 +19,13 @@ import {
   EvmContractCallWithTokenEvent,
   EvmListener,
   AxelarListener,
-} from './listeners';
+} from '../listeners';
 import {
   ContractCallEventObject,
   ContractCallApprovedEventObject,
   ContractCallWithTokenEventObject,
   ContractCallApprovedWithMintEventObject,
-} from './types/contracts/IAxelarGateway';
+} from '../types/contracts/IAxelarGateway';
 import {
   handleAnyError,
   handleEvmToCosmosCompleteEvent,
@@ -35,11 +35,9 @@ import {
   prepareHandler,
   handleEvmToCosmosConfirmEvent,
   handleCosmosToEvmEvent,
-} from './handler';
-import { initServer } from './api';
-import { logger } from './logger';
+} from '../handler';
 import { createCosmosEventSubject, createEvmEventSubject } from './subject';
-import { filterCosmosDestination, mapEventToEvmClient } from './utils/operatorUtils';
+import { filterCosmosDestination, mapEventToEvmClient } from './rxOperators';
 
 const sEvmCallContract = createEvmEventSubject<ContractCallEventObject>();
 const sEvmCallContractWithToken = createEvmEventSubject<ContractCallWithTokenEventObject>();
@@ -55,10 +53,9 @@ const sCosmosApproveAny = new Subject<IBCPacketEvent>();
 
 // Initialize DB client
 const db = new DatabaseClient();
-
 const cosmosChainNames = cosmosChains.map((chain) => chain.chainId);
 
-async function main() {
+export async function startRelayer() {
   const axelarListener = new AxelarListener(axelarChain.ws);
   const evmListeners = evmChains.map((evm) => new EvmListener(evm, cosmosChainNames));
   const axelarClient = await AxelarClient.init(db, axelarChain);
@@ -66,7 +63,6 @@ async function main() {
   //   const cosmosClients = cosmosChains.map((cosmos) => AxelarClient.init(cosmos));
 
   /** ######## Handle events ########## */
-
   // Subscribe to the ContractCallWithToken event at the gateway contract (EVM -> Cosmos direction)
   sEvmCallContractWithToken
     // Filter the event by the supported cosmos chains. This is to avoid conflict with existing relayers that relay to evm chains.
@@ -115,7 +111,6 @@ async function main() {
   });
 
   // Subscribe to the IBCComplete event at the axelar network. (EVM -> Cosmos direction)
-  // This mean the gmp flow is completed.
   sCosmosApproveAny.subscribe((event) => {
     prepareHandler(event, db, 'handleEvmToCosmosCompleteEvent')
       // Just logging the event for now
@@ -190,8 +185,7 @@ async function main() {
         .catch((e) => handleAnyError(db, 'handleCosmosToEvmCallContractCompleteEvent', e));
     });
 
-  // ########## Listens for events ##########
-
+  // Listening for evm events
   for (const evmListener of evmListeners) {
     evmListener.listen(EvmContractCallEvent, sEvmCallContract);
     evmListener.listen(EvmContractCallWithTokenEvent, sEvmCallContractWithToken);
@@ -199,14 +193,9 @@ async function main() {
     evmListener.listen(EvmContractCallWithTokenApprovedEvent, sEvmApproveContractCallWithToken);
   }
 
+  // Listening for axelar events
   axelarListener.listen(AxelarCosmosContractCallEvent, sCosmosContractCall);
   axelarListener.listen(AxelarCosmosContractCallWithTokenEvent, sCosmosContractCallWithToken);
   axelarListener.listen(AxelarIBCCompleteEvent, sCosmosApproveAny);
   axelarListener.listen(AxelarEVMCompletedEvent, sEvmConfirmEvent);
 }
-
-logger.info('Starting relayer server...');
-initServer();
-
-// handle error globally
-main();

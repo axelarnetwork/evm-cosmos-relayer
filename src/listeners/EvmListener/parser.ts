@@ -1,5 +1,4 @@
 import { ethers } from 'ethers';
-import { filterEventArgs } from '../../utils/operatorUtils';
 import { TypedEvent } from '../../types/contracts/common';
 
 export const parseAnyEvent = async (
@@ -24,4 +23,13 @@ export const parseAnyEvent = async (
     },
     args: filterEventArgs(event),
   };
+};
+
+
+const filterEventArgs = (event: TypedEvent) => {
+  return Object.entries(event.args).reduce((acc, [key, value]) => {
+    if (!isNaN(Number(key))) return acc;
+    acc[key] = value;
+    return acc;
+  }, {} as any);
 };
