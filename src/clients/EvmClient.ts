@@ -1,5 +1,5 @@
 import { Wallet, ethers } from 'ethers';
-import { EvmNetworkConfig } from '../config/types';
+import { EvmNetworkConfig } from 'config';
 import {
   IAxelarGateway__factory,
   IAxelarGateway,
@@ -7,7 +7,7 @@ import {
   IAxelarExecutable__factory,
 } from '../types/contracts';
 import { env } from '..';
-import { sleep } from '../utils/utils';
+import { sleep } from './sleep';
 import { logger } from '../logger';
 
 export class EvmClient {
@@ -50,6 +50,52 @@ export class EvmClient {
       logger.error(`[EvmClient.gatewayExecute] Failed ${e.message}`);
       return undefined;
     });
+  }
+
+  public isExecuted(commandId: string) {
+    return this.gateway.isCommandExecuted(commandId);
+  }
+
+  // warning: this function should be called after the command is executed, otherwise it will always return false
+  public isCallContractExecuted(
+    commandId: string,
+    sourceChain: string,
+    sourceAddress: string,
+    contractAddress: string,
+    payloadHash: string
+  ) {
+    return this.gateway
+      .isContractCallApproved(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        contractAddress,
+        payloadHash
+      )
+      .then((unexecuted) => !unexecuted);
+  }
+
+  // warning: this function should be called after the command is executed, otherwise it will always return false
+  public isCallContractWithTokenExecuted(
+    commandId: string,
+    sourceChain: string,
+    sourceAddress: string,
+    contractAddress: string,
+    payloadHash: string,
+    symbol: string,
+    amount: string
+  ) {
+    return this.gateway
+      .isContractCallAndMintApproved(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        contractAddress,
+        payloadHash,
+        symbol,
+        amount
+      )
+      .then((unexecuted) => !unexecuted);
   }
 
   public execute(
@@ -113,9 +159,11 @@ export class EvmClient {
       .sendTransaction(tx)
       .then((t) => t.wait())
       .catch(async (e: any) => {
-        logger.error(`[EvmClient.submitTx] Failed ${e.message}`);
+        logger.error(
+          `[EvmClient.submitTx] Failed ${e.error.reason} to: ${tx.to} data: ${tx.data}`
+        );
         await sleep(this.retryDelay);
-        logger.info(`Retrying tx: ${retryAttempt + 1}`);
+        logger.debug(`Retrying tx: ${retryAttempt + 1}`);
         return this.submitTx(tx, retryAttempt + 1);
       });
   }
