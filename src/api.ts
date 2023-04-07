@@ -9,7 +9,7 @@ import Inert from '@hapi/inert';
 import Vision from '@hapi/vision';
 import HapiSwagger from 'hapi-swagger';
 
-export const initServer = async () => {
+export const startAPIServer = async () => {
   const prisma = new PrismaClient();
   const server = hapi.server({
     port: env.PORT,
