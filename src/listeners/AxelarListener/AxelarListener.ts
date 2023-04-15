@@ -1,4 +1,4 @@
-import ReconnectingWebSocket from 'reconnecting-websocket';
+import ReconnectingWebSocket, { CloseEvent } from 'reconnecting-websocket';
 import WebSocket from 'isomorphic-ws';
 import { Subject } from 'rxjs';
 import { AxelarListenerEvent } from './eventTypes';
@@ -8,8 +8,8 @@ export class AxelarListener {
   private wsMap: Map<string, ReconnectingWebSocket>;
   private wsOptions = {
     WebSocket, // custom WebSocket constructor
-    connectionTimeout: 30000,
-    maxRetries: 10,
+    connectionTimeout: 5000,
+    maxRetries: Infinity,
   };
 
   private wsUrl: string;
@@ -33,7 +33,7 @@ export class AxelarListener {
   public listen<T>(event: AxelarListenerEvent<T>, subject: Subject<T>) {
     const ws = this.getWs(event.topicId);
     ws.reconnect();
-    logger.info(`[AxelarListener] Listening to "${event.type}" event`);
+    logger.info(`[AxelarLisatener] Listening to "${event.type}" event`);
     ws.send(
       JSON.stringify({
         jsonrpc: '2.0',
