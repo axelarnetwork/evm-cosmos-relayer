@@ -5,5 +5,19 @@
     "rpcUrl": "http://a5c6803b39cd942c3b9daee2847e24fa-1977123350.us-east-2.elb.amazonaws.com:7545",
     "gateway": "0xE720c5C38028Ca08DA47E179162Eca2DD255B6eC",
     "finality": 1
+  },
+  {
+    "id": "goerli",
+    "name": "goerli",
+    "rpcUrl": "https://goerli.infura.io/v3/10de1265f1234c93acfec19ca8f4afd7",
+    "gateway": "0xfcc9fb9d2c6404D1C1BEB192020D1e7AC2826c8d",
+    "finality": 1
+  },
+  {
+    "id": "avalanche",
+    "name": "avalanche",
+    "rpcUrl": "https://rpc.ankr.com/avalanche_fuji",
+    "gateway": "0x3724270405e60Fb25f99556Ad2104631f38b9b79",
+    "finality": 1
   }
 ]
