@@ -24,11 +24,19 @@ export class EvmListener {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public listen<EventObject, Event extends TypedEvent<any, EventObject>>(
+  public async listen<EventObject, Event extends TypedEvent<any, EventObject>>(
     event: EvmListenerEvent<EventObject, Event>,
     subject: Subject<EvmEvent<EventObject>>
   ) {
     logger.info(`[EVMListener] [${this.chainId}] Listening to "${event.name}" event`);
+
+    // clear all listeners before subscribe a new one.
+    this.gatewayContract.removeAllListeners();
+
+    // update block number
+    this.currentBlock = await this.gatewayContract.provider.getBlockNumber();
+    logger.info(`chainId ${this.chainId} block number: ${this.currentBlock}`);
+
     const eventFilter = event.getEventFilter(this.gatewayContract);
     this.gatewayContract.on(eventFilter, async (...args) => {
       const ev: Event = args[args.length - 1];
