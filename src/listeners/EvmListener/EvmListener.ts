@@ -6,7 +6,7 @@ import { TypedEvent } from '../../types/contracts/common';
 import { EvmEvent } from '../../types';
 import { Subject } from 'rxjs';
 import { logger } from '../../logger';
-import { env } from 'config';
+import { env } from '../../config';
 
 export class EvmListener {
   private gatewayContract: IAxelarGateway;
