@@ -6,6 +6,7 @@ import { TypedEvent } from '../../types/contracts/common';
 import { EvmEvent } from '../../types';
 import { Subject } from 'rxjs';
 import { logger } from '../../logger';
+import { env } from 'config';
 
 export class EvmListener {
   private gatewayContract: IAxelarGateway;
@@ -33,7 +34,7 @@ export class EvmListener {
       const ev: Event = args[args.length - 1];
 
       if (ev.blockNumber <= this.currentBlock) return;
-      if (!event.isAcceptedChain(this.cosmosChainNames, ev.args)) return;
+      if (env.CHAIN_ENV === 'testnet' && !event.isAcceptedChain(this.cosmosChainNames, ev.args)) return;
 
       const evmEvent = await event.parseEvent(
         this.chainId,
