@@ -8,7 +8,7 @@ import {
 } from '../types/contracts/IAxelarGateway';
 import { CosmosNetworkConfig } from '../config/types';
 import { EvmClient } from '../clients';
-import { env } from 'config';
+import { env } from '../config';
 
 export function filterCosmosDestination(cosmosChains: CosmosNetworkConfig[]) {
   if (env.CHAIN_ENV === 'devnet')
