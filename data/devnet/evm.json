@@ -17,7 +17,7 @@
     "id": "avalanche",
     "name": "avalanche",
     "rpcUrl": "https://rpc.ankr.com/avalanche_fuji",
-    "finality": 1,
-    "gateway": "0x3724270405e60Fb25f99556Ad2104631f38b9b79"
+    "gateway": "0x3724270405e60Fb25f99556Ad2104631f38b9b79",
+    "finality": 1
   }
 ]
