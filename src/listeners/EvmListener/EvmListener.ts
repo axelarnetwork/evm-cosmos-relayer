@@ -35,7 +35,6 @@ export class EvmListener {
 
     // update block number
     this.currentBlock = await this.gatewayContract.provider.getBlockNumber();
-    logger.info(`chainId ${this.chainId} block number: ${this.currentBlock}`);
 
     const eventFilter = event.getEventFilter(this.gatewayContract);
     this.gatewayContract.on(eventFilter, async (...args) => {
