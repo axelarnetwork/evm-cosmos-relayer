@@ -11,7 +11,9 @@ import { EvmClient } from '../clients';
 import { env } from 'config';
 
 export function filterCosmosDestination(cosmosChains: CosmosNetworkConfig[]) {
-  if (env.CHAIN_ENV === 'devnet') return filter(() => true);
+  if (env.CHAIN_ENV === 'devnet')
+    return filter<EvmEvent<ContractCallWithTokenEventObject | ContractCallEventObject>>(() => true);
+
   return filter((event: EvmEvent<ContractCallWithTokenEventObject | ContractCallEventObject>) =>
     cosmosChains.map((chain) => chain.chainId).includes(event.args.destinationChain)
   );
