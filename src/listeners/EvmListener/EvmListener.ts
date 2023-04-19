@@ -41,7 +41,7 @@ export class EvmListener {
       const ev: Event = args[args.length - 1];
 
       if (ev.blockNumber <= this.currentBlock) return;
-      if (env.CHAIN_ENV === 'testnet' && !event.isAcceptedChain(this.cosmosChainNames, ev.args)) return;
+      if (env.CHAIN_ENV !== 'devnet' && !event.isAcceptedChain(this.cosmosChainNames, ev.args)) return;
 
       const evmEvent = await event.parseEvent(
         this.chainId,

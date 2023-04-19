@@ -1,0 +1,10 @@
+[
+  {
+    "chainId": "osmosis-5",
+    "denom": "uosmo",
+    "gasPrice": "0.0125",
+    "rpcUrl": "https://rpc.osmosis.zone",
+    "lcdUrl": "https://lcd.osmosis.zone",
+    "ws": "wss://rpc.osmosis.zone/websocket"
+  }
+]

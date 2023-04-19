@@ -30,6 +30,15 @@ export const apiLogger = createLogger({
 
 logger.info(`Production: ${process.env.NODE_ENV}`);
 
+function getDataDogService() {
+  if (env.CHAIN_ENV === 'devnet') {
+    return 'evm-cosmos-relayer-devnet';
+  } else if (env.CHAIN_ENV === 'mainnet') {
+    return 'evm-cosmos-relayer-mainnet';
+  }
+  return 'evm-cosmos-relayer-testnet';
+}
+
 if (process.env.NODE_ENV === 'production') {
   if (!env.DD_API_KEY) {
     logger.info('DD_API_KEY is not set, skipping datadog logger setup');
@@ -37,10 +46,7 @@ if (process.env.NODE_ENV === 'production') {
     logger.info('Setting up datadog logger');
     const apiFormat = combine(label({ label: 'api' }), ...baseFormats);
     const relayerFormat = combine(label({ label: 'relayer' }), ...baseFormats);
-    const datadogService =
-      env.CHAIN_ENV === 'devnet'
-        ? 'evm-cosmos-relayer-devnet'
-        : 'evm-cosmos-relayer-testnet';
+    const datadogService = getDataDogService();
     const httpTransportOptions = {
       host: 'http-intake.logs.datadoghq.com',
       path: `/api/v2/logs?dd-api-key=${env.DD_API_KEY}&ddsource=nodejs&service=${datadogService}`,

@@ -4,12 +4,42 @@ import testnetEvm from '../../data/testnet/evm.json';
 import devnetAxelar from '../../data/devnet/axelar.json';
 import devnetCosmos from '../../data/devnet/cosmos.json';
 import devnetEvm from '../../data/devnet/evm.json';
+import mainnetAxelar from '../../data/mainnet/axelar.json';
+import mainnetEvm from '../../data/mainnet/evm.json';
+import mainnetCosmos from '../../data/mainnet/cosmos.json';
 import { env } from '.';
 import { CosmosNetworkConfig, EvmNetworkConfig } from './types';
 
-const cosmos = env.CHAIN_ENV === 'devnet' ? devnetCosmos : testnetCosmos;
-const axelar = env.CHAIN_ENV === 'devnet' ? devnetAxelar : testnetAxelar;
-const evm = env.CHAIN_ENV === 'devnet' ? devnetEvm : testnetEvm;
+function getCosmosChains() {
+  if (env.CHAIN_ENV === 'devnet') {
+    return devnetCosmos;
+  } else if (env.CHAIN_ENV === 'mainnet') {
+    return mainnetCosmos;
+  }
+  return testnetCosmos;
+}
+
+function getAxelarChain() {
+  if (env.CHAIN_ENV === 'devnet') {
+    return devnetAxelar;
+  } else if (env.CHAIN_ENV === 'mainnet') {
+    return mainnetAxelar;
+  }
+  return testnetAxelar;
+}
+
+function getEvmChains() {
+  if (env.CHAIN_ENV === 'devnet') {
+    return devnetEvm;
+  } else if (env.CHAIN_ENV === 'mainnet') {
+    return mainnetEvm;
+  }
+  return testnetEvm;
+}
+
+const cosmos = getCosmosChains();
+const axelar = getAxelarChain();
+const evm = getEvmChains();
 
 export const cosmosChains: CosmosNetworkConfig[] = cosmos.map((chain) => ({
   ...chain,

@@ -1,0 +1,8 @@
+{
+  "chainId": "axelar",
+  "denom": "uaxl",
+  "gasPrice": "0.0125",
+  "rpcUrl": "https://rpc-axelar.imperator.co:443",
+  "lcdUrl": "https://lcd-axelar.imperator.co",
+  "ws": "ws://rpc-axelar.imperator.co/wss"
+}
