@@ -1,6 +1,6 @@
 [
   {
-    "chainId": "osmosis-5",
+    "chainId": "osmosis-6",
     "denom": "uosmo",
     "gasPrice": "0.0125",
     "rpcUrl": "https://rpc-test.osmosis.zone:443",
