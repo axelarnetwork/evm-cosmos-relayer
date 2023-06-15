@@ -205,7 +205,7 @@ export class DatabaseClient {
               contractAddress: contractAddress.toLowerCase(),
               amount: amount.toString(),
             },
-            status: Status.PENDING,
+            status: Status.APPROVED,
           },
         ],
       },
