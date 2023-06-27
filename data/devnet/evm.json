@@ -9,7 +9,7 @@
   {
     "id": "goerli",
     "name": "goerli",
-    "rpcUrl": "https://goerli.infura.io/v3/10de1265f1234c93acfec19ca8f4afd7",
+    "rpcUrl": "https://rpc.ankr.com/eth_goerli",
     "gateway": "0xfcc9fb9d2c6404D1C1BEB192020D1e7AC2826c8d",
     "finality": 1
   },
